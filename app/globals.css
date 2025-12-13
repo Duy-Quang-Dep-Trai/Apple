@@ -24,3 +24,34 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* globals.css */
+.ribbon-sheen {
+  background: linear-gradient(
+    90deg,
+    rgba(98, 180, 255, 0) 0%,
+    rgba(98, 180, 255, 0.18) 18%,
+    rgba(255, 214, 176, 0.22) 50%,
+    rgba(200, 231, 255, 0.18) 82%,
+    rgba(255, 214, 176, 0) 100%
+  );
+  animation: ribbonMove 6s ease-in-out infinite;
+  transform: translateX(0);
+}
+
+@keyframes ribbonMove {
+  0% {
+    transform: translateX(-8%);
+  }
+  50% {
+    transform: translateX(8%);
+  }
+  100% {
+    transform: translateX(-8%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ribbon-sheen {
+    animation: none;
+  }
+}
