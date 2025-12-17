@@ -24,34 +24,31 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
-/* globals.css */
-.ribbon-sheen {
-  background: linear-gradient(
-    90deg,
-    rgba(98, 180, 255, 0) 0%,
-    rgba(98, 180, 255, 0.18) 18%,
-    rgba(255, 214, 176, 0.22) 50%,
-    rgba(200, 231, 255, 0.18) 82%,
-    rgba(255, 214, 176, 0) 100%
-  );
-  animation: ribbonMove 6s ease-in-out infinite;
-  transform: translateX(0);
+/* ===== Gentle Apple-like flyout text reveal ===== */
+.globalnav-flyout-item {
+  opacity: 0;
+  transform: translateY(-6px);
+
+  transition-property: opacity, transform;
+  transition-duration: 740ms;
+  transition-timing-function: ease-in-out;
+
+  will-change: opacity, transform;
 }
 
-@keyframes ribbonMove {
-  0% {
-    transform: translateX(-8%);
-  }
-  50% {
-    transform: translateX(8%);
-  }
-  100% {
-    transform: translateX(-8%);
-  }
+/* Panel mở: chữ bắt đầu chạy SAU panel một nhịp */
+.globalnav-flyout[aria-hidden="false"] .globalnav-flyout-item {
+  opacity: 1;
+  transform: translateY(0);
+
+  /* 160ms để panel “xuống” trước, rồi chữ mới chạy */
+  transition-delay: calc(260ms + (var(--item-index, 0) * 80ms));
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ribbon-sheen {
-    animation: none;
+  .globalnav-flyout-item {
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
