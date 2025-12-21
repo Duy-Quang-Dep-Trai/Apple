@@ -4,10 +4,13 @@ import type { CSSProperties } from "react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 export type MenuItem = {
-  id: string; // ✅ dùng để key unique
+  id: string;
   label: string;
   href: string;
   strong?: boolean;
+
+  // ✅ NEW: override style riêng cho item (Apple dùng cho “So Sánh Mac”, “Chuyển Từ PC Sang Mac”)
+  elevated?: boolean;
 };
 
 export type MenuGroup = {
@@ -27,7 +30,6 @@ export default function FlyoutMenu({
   menu: MenuData;
   id?: string;
 }) {
-  // ✅ giữ nguyên columns “pixel” của bạn
   const columns = useMemo(
     () =>
       [
@@ -38,43 +40,34 @@ export default function FlyoutMenu({
     []
   );
 
-  // ✅ padding chuẩn Apple bạn đang dùng
   const PADDING_TOP = 40;
   const PADDING_BOTTOM = 84;
   const PADDING_X = 22;
 
-  // ✅ đo chiều cao thật (max height của các cột absolute) để nền kéo đúng
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const colRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [measuredHeight, setMeasuredHeight] = useState<number>(0);
 
   const measure = () => {
-    // cột là absolute => phải đo từng cột
     const heights = colRefs.current.map((el) => (el ? el.scrollHeight : 0));
     const maxCol = Math.max(0, ...heights);
-
-    // height tổng = paddingTop + content + paddingBottom
     const total = PADDING_TOP + maxCol + PADDING_BOTTOM;
     setMeasuredHeight(total);
   };
 
-  // đo ngay khi mở / menu đổi
   useLayoutEffect(() => {
     if (open) measure();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, menu]);
 
-  // đo lại khi resize
   useEffect(() => {
     if (!open) return;
-
     const onResize = () => measure();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // ResizeObserver: theo dõi wrap (font load, content render, v.v.)
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
@@ -82,13 +75,11 @@ export default function FlyoutMenu({
     const ro = new ResizeObserver(() => {
       if (open) measure();
     });
-
     ro.observe(el);
     return () => ro.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // index để stagger chữ (giống Apple dùng item-number)
   let idx = 0;
 
   return (
@@ -109,10 +100,8 @@ export default function FlyoutMenu({
         transitionProperty: "height, opacity, transform",
         transitionDuration: open ? "320ms" : "220ms",
         transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
-        pointerEvents: open ? "auto" : "none",
       }}
     >
-      {/* wrap để ResizeObserver bám, bên trong là content thật */}
       <div ref={wrapRef}>
         <div
           className="mx-auto"
@@ -125,7 +114,6 @@ export default function FlyoutMenu({
             paddingRight: PADDING_X,
           }}
         >
-          {/* container relative để “đặt cột” */}
           <div className="relative">
             {menu.map((group, gi) => {
               const col = columns[gi] ?? columns[0];
@@ -157,9 +145,13 @@ export default function FlyoutMenu({
                     {group.items.map((it) => {
                       const itemIndex = idx++;
 
+                      // ✅ Apple logic: item có thể “hạ cấp” dù group elevated
+                      const isElevatedItem =
+                        it.elevated ?? group.elevated ?? false;
+
                       return (
                         <li
-                          key={`${group.title}__${it.id}`} // ✅ FIX: key unique, không còn trùng href
+                          key={it.id}
                           style={
                             { ["--item-index" as any]: itemIndex } as CSSProperties
                           }
@@ -168,11 +160,15 @@ export default function FlyoutMenu({
                             href={it.href}
                             className={[
                               "globalnav-submenu-link globalnav-flyout-item block",
-                              group.elevated
+
+                              // 1) Elevated item (to)
+                              isElevatedItem
                                 ? "text-[24px] leading-[1.12] tracking-[-0.02em] font-semibold text-[#1d1d1f] dark:text-white"
-                                : it.strong
+                                : // 2) Strong item (đậm)
+                                it.strong
                                   ? "text-[12px] leading-[1.45] font-semibold text-[#1d1d1f] dark:text-white"
-                                  : "text-[12px] leading-[1.45] font-medium text-[#6e6e73] dark:text-[#86868b]",
+                                  : // 3) Normal item (nhỏ)
+                                  "text-[12px] leading-[1.45] font-medium text-[#6e6e73] dark:text-[#86868b]",
                             ].join(" ")}
                           >
                             {it.label}
@@ -188,7 +184,6 @@ export default function FlyoutMenu({
         </div>
       </div>
 
-      {/* ✅ giữ đúng “mượt Apple”: stagger chữ rơi dần */}
       <style jsx global>{`
         .globalnav-flyout-item {
           opacity: 0;
