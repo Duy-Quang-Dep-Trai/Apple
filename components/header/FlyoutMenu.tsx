@@ -1,6 +1,5 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 export type MenuItem = {
@@ -8,8 +7,7 @@ export type MenuItem = {
   label: string;
   href: string;
   strong?: boolean;
-
-  // ✅ NEW: override style riêng cho item (Apple dùng cho “So Sánh Mac”, “Chuyển Từ PC Sang Mac”)
+  // item có thể override elevated dù group elevated
   elevated?: boolean;
 };
 
@@ -30,29 +28,32 @@ export default function FlyoutMenu({
   menu: MenuData;
   id?: string;
 }) {
-  const columns = useMemo(
-    () =>
-      [
-        { left: 0, width: 360 },
-        { left: 295, width: 220 },
-        { left: 455, width: 260 },
-      ] as const,
-    []
-  );
-
+  // Apple-like constants
+  const MAX_WIDTH = 1024;
   const PADDING_TOP = 40;
   const PADDING_BOTTOM = 84;
   const PADDING_X = 22;
 
+  // Bạn có thể tinh chỉnh 3 giá trị này để ra “đúng khoảng cách Apple”
+  // (đây là cấu hình rất gần với ảnh bạn gửi)
+  const GRID = useMemo(
+    () => ({
+      col1: 360,
+      col2: 220,
+      col3: 260,
+      gap: 68,
+    }),
+    []
+  );
+
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const colRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [measuredHeight, setMeasuredHeight] = useState<number>(0);
 
   const measure = () => {
-    const heights = colRefs.current.map((el) => (el ? el.scrollHeight : 0));
-    const maxCol = Math.max(0, ...heights);
-    const total = PADDING_TOP + maxCol + PADDING_BOTTOM;
-    setMeasuredHeight(total);
+    const el = wrapRef.current;
+    if (!el) return;
+    // đo chiều cao nội dung thật để animate height
+    setMeasuredHeight(el.scrollHeight);
   };
 
   useLayoutEffect(() => {
@@ -68,18 +69,7 @@ export default function FlyoutMenu({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-
-    const ro = new ResizeObserver(() => {
-      if (open) measure();
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
+  // Stagger index giống Apple
   let idx = 0;
 
   return (
@@ -102,105 +92,89 @@ export default function FlyoutMenu({
         transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
-      <div ref={wrapRef}>
+      <div
+        ref={wrapRef}
+        className="mx-auto"
+        style={{
+          width: MAX_WIDTH,
+          maxWidth: "100%",
+          paddingTop: PADDING_TOP,
+          paddingBottom: PADDING_BOTTOM,
+          paddingLeft: PADDING_X,
+          paddingRight: PADDING_X,
+        }}
+      >
+        {/* GRID layout thay vì absolute */}
         <div
-          className="mx-auto"
+          className="grid items-start"
           style={{
-            width: 1024,
-            maxWidth: "100%",
-            paddingTop: PADDING_TOP,
-            paddingBottom: PADDING_BOTTOM,
-            paddingLeft: PADDING_X,
-            paddingRight: PADDING_X,
+            gridTemplateColumns:
+              menu.length >= 3
+                ? `${GRID.col1}px ${GRID.col2}px ${GRID.col3}px`
+                : menu.length === 2
+                  ? `${GRID.col1}px ${GRID.col2 + GRID.col3}px`
+                  : "1fr",
+            columnGap: GRID.gap,
           }}
         >
-          <div className="relative">
-            {menu.map((group, gi) => {
-              const col = columns[gi] ?? columns[0];
-              const headerIndex = idx++;
+          {menu.map((group) => {
+            const headerIndex = idx++;
 
-              return (
-                <div
-                  key={group.title}
-                  ref={(el) => {
-                    colRefs.current[gi] = el;
+            return (
+              <div key={group.title} className="min-w-0">
+                <h2
+                  className={[
+                    "text-[12px] font-medium text-[#6e6e73] dark:text-[#86868b]",
+                    "transition-[opacity,transform] duration-[520ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+                  ].join(" ")}
+                  style={{
+                    opacity: open ? 1 : 0,
+                    transform: open ? "translateY(0px)" : "translateY(-6px)",
+                    transitionDelay: `${headerIndex * 22}ms`,
                   }}
-                  className="absolute top-0"
-                  style={{ left: col.left, width: col.width }}
                 >
-                  <h2
-                    className={[
-                      "globalnav-submenu-header",
-                      "globalnav-flyout-item",
-                      "text-[12px] font-medium text-[#6e6e73] dark:text-[#86868b]",
-                    ].join(" ")}
-                    style={
-                      { ["--item-index" as any]: headerIndex } as CSSProperties
-                    }
-                  >
-                    {group.title}
-                  </h2>
+                  {group.title}
+                </h2>
 
-                  <ul className="mt-[14px] space-y-[10px]">
-                    {group.items.map((it) => {
-                      const itemIndex = idx++;
+                <ul className="mt-[14px] space-y-[10px]">
+                  {group.items.map((it) => {
+                    const itemIndex = idx++;
+                    const isElevatedItem = it.elevated ?? group.elevated ?? false;
 
-                      // ✅ Apple logic: item có thể “hạ cấp” dù group elevated
-                      const isElevatedItem =
-                        it.elevated ?? group.elevated ?? false;
+                    const typo = isElevatedItem
+                      ? "text-[24px] leading-[1.12] tracking-[-0.02em] font-semibold text-[#1d1d1f] dark:text-white"
+                      : it.strong
+                        ? "text-[12px] leading-[1.45] font-semibold text-[#1d1d1f] dark:text-white"
+                        : "text-[12px] leading-[1.45] font-medium text-[#6e6e73] dark:text-[#86868b]";
 
-                      return (
-                        <li
-                          key={it.id}
-                          style={
-                            { ["--item-index" as any]: itemIndex } as CSSProperties
-                          }
+                    return (
+                      <li key={it.id}>
+                        <a
+                          href={it.href}
+                          className={[
+                            "block min-w-0",
+                            "transition-[opacity,transform] duration-[520ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+                            typo,
+                          ].join(" ")}
+                          style={{
+                            opacity: open ? 1 : 0,
+                            transform: open ? "translateY(0px)" : "translateY(-6px)",
+                            transitionDelay: `${itemIndex * 22}ms`,
+                            // tránh chữ dài làm vỡ layout
+                            wordBreak: "break-word",
+                          }}
                         >
-                          <a
-                            href={it.href}
-                            className={[
-                              "globalnav-submenu-link globalnav-flyout-item block",
-
-                              // 1) Elevated item (to)
-                              isElevatedItem
-                                ? "text-[24px] leading-[1.12] tracking-[-0.02em] font-semibold text-[#1d1d1f] dark:text-white"
-                                : // 2) Strong item (đậm)
-                                it.strong
-                                  ? "text-[12px] leading-[1.45] font-semibold text-[#1d1d1f] dark:text-white"
-                                  : // 3) Normal item (nhỏ)
-                                  "text-[12px] leading-[1.45] font-medium text-[#6e6e73] dark:text-[#86868b]",
-                            ].join(" ")}
-                          >
-                            {it.label}
-                          </a>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
+                          {it.label}
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
         </div>
       </div>
-
-      <style jsx global>{`
-        .globalnav-flyout-item {
-          opacity: 0;
-          transform: translateY(-6px);
-          transition-property: opacity, transform;
-          transition-duration: 520ms;
-          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-          transition-delay: calc(var(--item-index, 0) * 22ms);
-          will-change: opacity, transform;
-        }
-
-        .globalnav-flyout.globalnav-submenu[aria-hidden="false"]
-          .globalnav-flyout-item {
-          opacity: 1;
-          transform: translateY(0px);
-        }
-      `}</style>
     </div>
   );
 }
