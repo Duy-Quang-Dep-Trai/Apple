@@ -1,13 +1,13 @@
 import StoreRibbon from "@/components/ribbon/StoreRibbon";
 import Main from "@/components/layout/Main";
-import Hero from "@/pages-ui/store/Hero";
+import { StoreHome } from "@/pages-ui/store";
 
 export default function StorePage() {
     return (
         <>
             <StoreRibbon />
             <Main>
-                <Hero />
+                <StoreHome />
             </Main>
         </>
     );

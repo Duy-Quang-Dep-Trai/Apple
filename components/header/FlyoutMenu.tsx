@@ -23,10 +23,12 @@ export default function FlyoutMenu({
   open,
   menu,
   id,
+  onNavigate,
 }: {
   open: boolean;
   menu: MenuData;
   id?: string;
+  onNavigate?: () => void;
 }) {
   // Apple-like constants
   const MAX_WIDTH = 1024;
@@ -38,7 +40,7 @@ export default function FlyoutMenu({
   // (đây là cấu hình rất gần với ảnh bạn gửi)
   const GRID = useMemo(
     () => ({
-      col1: 360,
+      col1: 260,
       col2: 220,
       col3: 260,
       gap: 68,
@@ -151,6 +153,7 @@ export default function FlyoutMenu({
                       <li key={it.id}>
                         <a
                           href={it.href}
+                          onClick={onNavigate}
                           className={[
                             "block min-w-0",
                             "transition-[opacity,transform] duration-[520ms] ease-[cubic-bezier(0.4,0,0.2,1)]",

@@ -15,8 +15,10 @@ export const macMenu: MenuData = [
       { id: "displays", label: "Màn Hình", href: "/mac/displays" },
 
       // 2 dòng “nhỏ” cuối (Apple style)
-      { id: "compare", label: "So Sánh Mac", href: "/mac/compare" },
-      { id: "switch", label: "Chuyển Từ PC Sang Mac", href: "/mac/switch" },
+      // 2 dòng “nhỏ” cuối (Apple style) -> override
+      { id: "compare", label: "So Sánh Mac", href: "/mac/compare", elevated: false },
+      { id: "switch", label: "Chuyển Từ PC Sang Mac", href: "/mac/switch", elevated: false },
+
     ],
   },
   {

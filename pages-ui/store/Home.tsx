@@ -1,5 +1,10 @@
 import Hero from "./Hero";
 
 export default function Home() {
-    <Hero />
+    return (
+        <>
+            <Hero />
+            {/* sau này thêm <ProductSection /> ... */}
+        </>
+    );
 }

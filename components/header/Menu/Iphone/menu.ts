@@ -12,9 +12,9 @@ export const iphoneMenu: MenuData = [
       { id: "iphone-16", label: "iPhone 16", href: "/iphone/iphone-16" },
       { id: "iphone-16e", label: "iPhone 16e", href: "/iphone/iphone-16e" },
 
-      // 2 dòng “nhỏ”
-      { id: "iphone-compare", label: "So Sánh iPhone", href: "/iphone/compare" },
-      { id: "iphone-switch-android", label: "Chuyển Từ Android", href: "/iphone/switch" },
+      // ✅ 2 dòng “nhỏ” cuối: override elevated=false để không bị chữ to
+      { id: "iphone-compare", label: "So Sánh iPhone", href: "/iphone/compare", elevated: false },
+      { id: "iphone-switch-android", label: "Chuyển Từ Android", href: "/iphone/switch", elevated: false },
     ],
   },
   {

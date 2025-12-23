@@ -13,8 +13,8 @@ export const ipadMenu: MenuData = [
       { id: "apple-pencil", label: "Apple Pencil", href: "/ipad/apple-pencil" },
       { id: "ipad-keyboards", label: "Bàn Phím", href: "/ipad/keyboards" },
 
-      // dòng “nhỏ”
-      { id: "ipad-compare", label: "So Sánh iPad", href: "/ipad/compare" },
+      // ✅ dòng “nhỏ” (override group elevated)
+      { id: "ipad-compare", label: "So Sánh iPad", href: "/ipad/compare", elevated: false },
     ],
   },
   {

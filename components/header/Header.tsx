@@ -10,9 +10,15 @@ import { macMenu } from "./Menu/Mac/menu";
 import { ipadMenu } from "./Menu/Ipad/menu";
 import { iphoneMenu } from "./Menu/Iphone/menu";
 import { watchMenu } from "./Menu/Watch/menu";
+import { airpodsMenu } from "./Menu/AirPods/menu";
+import { tvHomeMenu } from "./Menu/TvHome/menu";
+import { entertainmentMenu } from "./Menu/Entertainment/menu";
+import { accessoriesMenu } from "./Menu/accessories/menu";
+import { supportMenu } from "./Menu/Support/menu";
+
 
 // 1) OpenKey: chỉ những cái có dropdown
-type OpenKey = "store" | "mac" | "ipad" | "iphone" | "watch" | "airpods" | null;
+type OpenKey = "store" | "mac" | "ipad" | "iphone" | "watch" | "airpods" | "tv-home" | "entertainment" | "accessories" | "support" | null;
 
 // 2) NavItem types
 type NavItemBase = {
@@ -40,10 +46,10 @@ const navItems = [
     { label: "Watch", href: "/watch", menuKey: "watch" },
     { label: "AirPods", href: "/airpods", menuKey: "airpods" },
 
-    { label: "TV & Nhà", href: "/tv-home" },
-    { label: "Giải Trí", href: "/entertainment" },
-    { label: "Phụ Kiện", href: "/accessories" },
-    { label: "Hỗ Trợ", href: "/support" },
+    { label: "TV & Nhà", href: "/tv-home", menuKey: "tv-home" },
+    { label: "Giải Trí", href: "/entertainment", menuKey: "entertainment" },
+    { label: "Phụ Kiện", href: "/accessories", menuKey: "accessories" },
+    { label: "Hỗ Trợ", href: "/support", menuKey: "support" },
 ] satisfies readonly NavItem[];
 
 export default function Header() {
@@ -69,8 +75,11 @@ export default function Header() {
         if (openKey === "ipad") return ipadMenu;
         if (openKey === "iphone") return iphoneMenu;
         if (openKey === "watch") return watchMenu;
-
-        // airpods bạn chưa làm menu thì return null, còn nếu có thì thêm airpodsMenu ở đây
+        if (openKey === "airpods") return airpodsMenu;
+        if (openKey === "tv-home") return tvHomeMenu;
+        if (openKey === "entertainment") return entertainmentMenu;
+        if (openKey === "accessories") return accessoriesMenu;
+        if (openKey === "support") return supportMenu;
         return null;
     }, [openKey]);
 
@@ -96,13 +105,11 @@ export default function Header() {
                                 <li className="flex h-11 w-[30px] items-center justify-center">
                                     <Link
                                         href="/"
-                                        aria-label="Trang chủ"
-                                        className="flex h-7 w-7 items-center justify-center hover:opacity-80"
-                                        onMouseEnter={closeAll}
-                                        onFocus={closeAll}
+                                        className="flex h-7 w-7 items-center justify-center hover:opacity-80 cursor-pointer"
                                     >
                                         <span className="text-xl leading-none"></span>
                                     </Link>
+
                                 </li>
 
                                 {/* Menu items */}
@@ -116,9 +123,11 @@ export default function Header() {
                                                 className="relative py-[2px] transition hover:text-[#1d1d1f] dark:hover:text-white hover:translate-y-[1px]"
                                                 onMouseEnter={() => (dropdown ? setOpenKey(item.menuKey) : closeAll())}
                                                 onFocus={() => (dropdown ? setOpenKey(item.menuKey) : closeAll())}
+                                                onClick={closeAll}   // 🔥 DÒNG QUAN TRỌNG
                                                 aria-expanded={dropdown ? openKey === item.menuKey : undefined}
                                                 aria-controls={dropdown ? `globalnav-submenu-${item.menuKey}` : undefined}
                                             >
+
                                                 {item.label}
                                             </Link>
                                         </li>
@@ -170,7 +179,12 @@ export default function Header() {
                 {/* Flyout */}
                 {activeMenu && (
                     <div id={activeId}>
-                        <FlyoutMenu open={isOpen} menu={activeMenu} id={activeId} />
+                        <FlyoutMenu
+                            open={isOpen}
+                            menu={activeMenu}
+                            id={activeId}
+                            onNavigate={closeAll}
+                        />
                     </div>
                 )}
             </div>
