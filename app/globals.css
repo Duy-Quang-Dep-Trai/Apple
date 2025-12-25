@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* app/globals.css */
+@import "../style//components//store.css";
 
 :root {
   --background: #f5f5f7;

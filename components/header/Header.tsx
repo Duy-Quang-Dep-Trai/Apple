@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import FlyoutMenu from "./FlyoutMenu";
 import { useHoverIntent } from "./useHoverIntent";
 
@@ -58,13 +58,54 @@ export default function Header() {
 
     const closeAll = () => setOpenKey(null);
 
-    // ESC để đóng
+    // ✅ NEW: chỉ mở bằng onFocus khi user dùng keyboard
+    const lastInputWasKeyboard = useRef(false);
+
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") closeAll();
+            // Tab / Arrow / Enter / Space
+            if (
+                e.key === "Tab" ||
+                e.key === "Enter" ||
+                e.key === " " ||
+                e.key.startsWith("Arrow")
+            ) {
+                lastInputWasKeyboard.current = true;
+            }
         };
-        window.addEventListener("keydown", onKeyDown);
-        return () => window.removeEventListener("keydown", onKeyDown);
+
+        const onPointerDown = () => {
+            // chuột / touch
+            lastInputWasKeyboard.current = false;
+        };
+
+        window.addEventListener("keydown", onKeyDown, true);
+        window.addEventListener("pointerdown", onPointerDown, true);
+
+        return () => {
+            window.removeEventListener("keydown", onKeyDown, true);
+            window.removeEventListener("pointerdown", onPointerDown, true);
+        };
+    }, []);
+
+    const openByFocus = (key: Exclude<OpenKey, null>) => {
+        if (!lastInputWasKeyboard.current) return; // chặn focus do restore tab / click chuột
+        setOpenKey(key);
+    };
+
+    // ✅ Đóng menu khi tab ẩn
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (document.visibilityState === "hidden") {
+                closeAll(); // đóng menu khi tab ẩn
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibility);
+
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibility);
+        };
     }, []);
 
     const isOpen = openKey !== null;
@@ -122,14 +163,14 @@ export default function Header() {
                                                 href={item.href}
                                                 className="relative py-[2px] transition hover:text-[#1d1d1f] dark:hover:text-white hover:translate-y-[1px]"
                                                 onMouseEnter={() => (dropdown ? setOpenKey(item.menuKey) : closeAll())}
-                                                onFocus={() => (dropdown ? setOpenKey(item.menuKey) : closeAll())}
-                                                onClick={closeAll}   // 🔥 DÒNG QUAN TRỌNG
+                                                onFocus={() => (dropdown ? openByFocus(item.menuKey) : closeAll())}
+                                                onClick={closeAll} // ✅ thêm lại để click là đóng menu
                                                 aria-expanded={dropdown ? openKey === item.menuKey : undefined}
                                                 aria-controls={dropdown ? `globalnav-submenu-${item.menuKey}` : undefined}
                                             >
-
                                                 {item.label}
                                             </Link>
+
                                         </li>
                                     );
                                 })}

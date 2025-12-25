@@ -1,0 +1,28 @@
+/* styles/base.css */
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-apple);
+  color: var(--c-text);
+  background: var(--c-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Link default giống Apple (không underline, hover mới underline) */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+/* Selection nhẹ */
+::selection {
+  background: rgba(0, 102, 204, 0.18);
+}

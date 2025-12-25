@@ -1,0 +1,14 @@
+/* styles/components/globalnav.css */
+
+/* Con trỏ tay cho link/button trong nav giống Apple */
+.globalnav-submenu-link,
+#globalnav-list a,
+#globalnav-list button {
+  cursor: pointer;
+}
+
+/* Nếu muốn hover opacity nhẹ như Apple */
+#globalnav-list a:hover,
+#globalnav-list button:hover {
+  opacity: 0.88;
+}

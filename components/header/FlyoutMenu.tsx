@@ -153,7 +153,7 @@ export default function FlyoutMenu({
                       <li key={it.id}>
                         <a
                           href={it.href}
-                          onClick={onNavigate}
+                          onClick={onNavigate}   // 👈 CHỖ QUAN TRỌNG
                           className={[
                             "block min-w-0",
                             "transition-[opacity,transform] duration-[520ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
@@ -163,12 +163,12 @@ export default function FlyoutMenu({
                             opacity: open ? 1 : 0,
                             transform: open ? "translateY(0px)" : "translateY(-6px)",
                             transitionDelay: `${itemIndex * 22}ms`,
-                            // tránh chữ dài làm vỡ layout
                             wordBreak: "break-word",
                           }}
                         >
                           {it.label}
                         </a>
+
                       </li>
                     );
                   })}

@@ -1,17 +1,11 @@
-import StoreRibbon from "@/components/ribbon/StoreRibbon";
-import Main from "@/components/layout/Main";
-// import Home from "@/pages-ui/home/Home";
 import Hero from "@/pages-ui/store/Hero";
-
+// import StoreRibbon from "@/components/ribbon/StoreRibbon";
 
 export default function StorePage() {
   return (
     <>
-      {/* <Home /> */}
       {/* <StoreRibbon /> */}
-      {/* <Main>
-        
-      </Main> */}
+      {/* <Hero /> */}
     </>
   );
 }
