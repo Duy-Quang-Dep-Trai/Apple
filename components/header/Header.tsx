@@ -19,7 +19,7 @@ import { supportMenu } from "./Menu/Support/menu";
 /**
  * Header (Apple-like globalnav)
  * - Desktop: hover flyout (only on real hover devices)
- * - Mobile: fullscreen menu overlay + focus trap + body scroll lock
+ * - Mobile: fullscreen menu overlay + focus trap + iOS-safe scroll lock
  */
 
 type OpenKey =
@@ -66,8 +66,12 @@ function getFocusable(container: HTMLElement | null) {
         "textarea:not([disabled])",
         "[tabindex]:not([tabindex='-1'])",
     ].join(",");
+
     return Array.from(container.querySelectorAll<HTMLElement>(selectors)).filter(
-        (el) => !el.hasAttribute("disabled") && el.tabIndex !== -1 && !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length)
+        (el) =>
+            !el.hasAttribute("disabled") &&
+            el.tabIndex !== -1 &&
+            !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length)
     );
 }
 
@@ -77,16 +81,16 @@ export default function Header() {
     const { cancelClose, scheduleClose } = useHoverIntent();
 
     // Mobile overlay menu
-    const [mobileOpen, setMobileOpen] = useState(true);
-    // Mobile menu: mount/unmount để animation không bị “lóe”
+    const [mobileOpen, setMobileOpen] = useState(false); // ✅ mặc định đóng
     const [mobileMounted, setMobileMounted] = useState(false);
-    const MOBILE_ANIM_MS = 240; // gần Apple timing
 
+    // Timing gần Apple
+    const MOBILE_ANIM_MS = 240;
 
-    // ✅ Hover capability gate (real hover devices only)
+    // Hover capability gate: only hover devices
     const [canHover, setCanHover] = useState(false);
 
-    // ✅ Only open by focus when user is using keyboard
+    // Track keyboard vs pointer
     const lastInputWasKeyboard = useRef(false);
 
     // Focus trap refs (mobile)
@@ -105,12 +109,13 @@ export default function Header() {
     //    (hover: hover) and (pointer: fine)
     // =========================
     useEffect(() => {
-        const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+        // guard SSR
+        if (typeof window === "undefined") return;
 
+        const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
         const update = () => setCanHover(mq.matches);
         update();
 
-        // Safari compatibility: use addEventListener if available, else addListener
         if (typeof mq.addEventListener === "function") {
             mq.addEventListener("change", update);
             return () => mq.removeEventListener("change", update);
@@ -125,10 +130,16 @@ export default function Header() {
     // =========================
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Tab" || e.key === "Enter" || e.key === " " || e.key.startsWith("Arrow")) {
+            if (
+                e.key === "Tab" ||
+                e.key === "Enter" ||
+                e.key === " " ||
+                e.key.startsWith("Arrow")
+            ) {
                 lastInputWasKeyboard.current = true;
             }
         };
+
         const onPointerDown = () => {
             lastInputWasKeyboard.current = false;
         };
@@ -141,20 +152,23 @@ export default function Header() {
             window.removeEventListener("pointerdown", onPointerDown, true);
         };
     }, []);
+
+    // =========================
+    // Mobile mount/unmount
+    // - mount ngay khi mở
+    // - unmount sau khi animation đóng chạy xong
+    // =========================
     useEffect(() => {
         if (mobileOpen) {
-            setMobileMounted(true); // mount trước
+            setMobileMounted(true);
             return;
         }
-
-        // nếu đang đóng: đợi animation chạy xong mới unmount
         const t = window.setTimeout(() => setMobileMounted(false), MOBILE_ANIM_MS);
         return () => window.clearTimeout(t);
     }, [mobileOpen]);
 
-
+    // Desktop: open by focus only if keyboard navigation
     const openByFocus = (key: Exclude<OpenKey, null>) => {
-        // only for keyboard navigation
         if (!lastInputWasKeyboard.current) return;
         setOpenKey(key);
     };
@@ -182,7 +196,7 @@ export default function Header() {
     }, [closeAll]);
 
     // =========================
-    // 3) Lock body scroll when mobile menu is open (iOS safe)
+    // iOS-safe scroll lock when mobile menu open
     // =========================
     useEffect(() => {
         if (!mobileOpen) return;
@@ -190,15 +204,14 @@ export default function Header() {
         const body = document.body;
         const html = document.documentElement;
 
-        // Save current styles to restore later
         const prevBodyOverflow = body.style.overflow;
         const prevBodyPosition = body.style.position;
         const prevBodyTop = body.style.top;
+        const prevBodyWidth = body.style.width;
         const prevHtmlOverflow = html.style.overflow;
 
         const scrollY = window.scrollY;
 
-        // Common iOS-safe approach: fix body position
         html.style.overflow = "hidden";
         body.style.overflow = "hidden";
         body.style.position = "fixed";
@@ -206,30 +219,28 @@ export default function Header() {
         body.style.width = "100%";
 
         return () => {
-            // Restore
             const top = body.style.top;
+
             html.style.overflow = prevHtmlOverflow;
             body.style.overflow = prevBodyOverflow;
             body.style.position = prevBodyPosition;
             body.style.top = prevBodyTop;
-            body.style.width = "";
+            body.style.width = prevBodyWidth;
 
-            // Restore scroll position
             const y = top ? -parseInt(top, 10) : scrollY;
             window.scrollTo(0, y);
         };
     }, [mobileOpen]);
 
     // =========================
-    // 4) Focus trap for mobile overlay + restore focus on close
+    // Focus trap + restore focus (mobile)
     // =========================
     useEffect(() => {
         if (!mobileOpen) return;
 
-        // Remember what was focused before opening
         restoreFocusRef.current = document.activeElement as HTMLElement | null;
 
-        // Move focus into overlay (first focusable)
+        // focus vào menu item đầu tiên (hoặc overlay)
         const focusables = getFocusable(mobileOverlayRef.current);
         (focusables[0] ?? mobileOverlayRef.current)?.focus?.();
 
@@ -238,6 +249,7 @@ export default function Header() {
 
             const container = mobileOverlayRef.current;
             const items = getFocusable(container);
+
             if (items.length === 0) {
                 e.preventDefault();
                 return;
@@ -247,14 +259,12 @@ export default function Header() {
             const last = items[items.length - 1];
             const active = document.activeElement as HTMLElement | null;
 
-            // Shift+Tab on first -> loop to last
             if (e.shiftKey && active === first) {
                 e.preventDefault();
                 last.focus();
                 return;
             }
 
-            // Tab on last -> loop to first
             if (!e.shiftKey && active === last) {
                 e.preventDefault();
                 first.focus();
@@ -265,7 +275,6 @@ export default function Header() {
         document.addEventListener("keydown", onKeyDown, true);
         return () => {
             document.removeEventListener("keydown", onKeyDown, true);
-            // Restore focus to where user was
             restoreFocusRef.current?.focus?.();
             restoreFocusRef.current = null;
         };
@@ -304,7 +313,7 @@ export default function Header() {
                             href="/"
                             aria-label="Apple"
                             className="flex h-8 w-8 items-center justify-center hover:opacity-80"
-                            onClick={() => setMobileOpen(false)}
+                            onClick={closeAll}
                         >
                             <span className="text-xl leading-none"></span>
                         </Link>
@@ -322,7 +331,13 @@ export default function Header() {
                                     // TODO: open search overlay
                                 }}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="44" viewBox="0 0 15 44" className="fill-current">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="15"
+                                    height="44"
+                                    viewBox="0 0 15 44"
+                                    className="fill-current"
+                                >
                                     <path d="M14.298,27.202l-3.87-3.87c0.701-0.929,1.122-2.081,1.122-3.332c0-3.06-2.489-5.55-5.55-5.55c-3.06,0-5.55,2.49-5.55,5.55 c0,3.061,2.49,5.55,5.55,5.55c1.251,0,2.403-0.421,3.332-1.122l3.87,3.87c0.151,0.151,0.35,0.228,0.548,0.228 s0.396-0.076,0.548-0.228C14.601,27.995,14.601,27.505,14.298,27.202z M1.55,20c0-2.454,1.997-4.45,4.45-4.45 c2.454,0,4.45,1.997,4.45,4.45S8.454,24.45,6,24.45C3.546,24.45,1.55,22.454,1.55,20z"></path>
                                 </svg>
                             </button>
@@ -338,7 +353,13 @@ export default function Header() {
                                     // TODO: open bag
                                 }}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="44" viewBox="0 0 14 44" className="fill-current">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="14"
+                                    height="44"
+                                    viewBox="0 0 14 44"
+                                    className="fill-current"
+                                >
                                     <path d="m11.3535 16.0283h-1.0205a3.4229 3.4229 0 0 0 -3.333-2.9648 3.4229 3.4229 0 0 0 -3.333 2.9648h-1.02a2.1184 2.1184 0 0 0 -2.117 2.1162v7.7155a2.1186 2.1186 0 0 0 2.1162 2.1167h8.707a2.1186 2.1186 0 0 0 2.1168-2.1167v-7.7155a2.1184 2.1184 0 0 0 -2.1165-2.1162zm-4.3535-1.8652a2.3169 2.3169 0 0 1 2.2222 1.8652h-4.4444a2.3169 2.3169 0 0 1 2.2222-1.8652zm5.37 11.6969a1.0182 1.0182 0 0 1 -1.0166 1.0171h-8.7069a1.0182 1.0182 0 0 1 -1.0165-1.0171v-7.7155a1.0178 1.0178 0 0 1 1.0166-1.0166h8.707a1.0178 1.0178 0 0 1 1.0164 1.0166z"></path>
                                 </svg>
                             </button>
@@ -379,7 +400,6 @@ export default function Header() {
                 </div>
 
                 {/* ================= MOBILE MENU OVERLAY (focus trap inside) ================= */}
-                {/* ================= MOBILE MENU OVERLAY (list) ================= */}
                 {mobileMounted && (
                     <div
                         ref={mobileOverlayRef}
@@ -390,12 +410,13 @@ export default function Header() {
                         className={[
                             "fixed inset-0 z-[100]",
                             "bg-[#f5f5f7] dark:bg-[#1d1d1f]",
+                            "transform-gpu",
                             "transition-[opacity,transform] duration-[240ms]",
-                            "ease-[cubic-bezier(0.42,0,0.58,1)]", // mượt kiểu Apple
+                            "ease-[cubic-bezier(0.42,0,0.58,1)]",
                             "will-change-[transform,opacity]",
                             mobileOpen
-                                ? "opacity-100 translate-y-0"
-                                : "opacity-0 -translate-y-2 pointer-events-none",
+                                ? "opacity-100 translate-y-0 scale-100"
+                                : "opacity-0 -translate-y-2 scale-[0.985] pointer-events-none",
                         ].join(" ")}
                     >
                         {/* top bar */}
@@ -418,11 +439,7 @@ export default function Header() {
                             >
                                 {navItems.map((item) => (
                                     <li key={item.href}>
-                                        <Link
-                                            href={item.href}
-                                            onClick={() => setMobileOpen(false)}
-                                            className="block"
-                                        >
+                                        <Link href={item.href} onClick={() => setMobileOpen(false)} className="block">
                                             {item.label}
                                         </Link>
                                     </li>
@@ -431,24 +448,32 @@ export default function Header() {
                         </nav>
                     </div>
                 )}
-
             </div>
 
             {/* ================= DESKTOP HEADER (hover flyout only on real hover devices) ================= */}
             <div className="hidden md:block">
-                <div onMouseEnter={cancelClose} onMouseLeave={() => scheduleClose(closeDesktopFlyout, 120)}>
+                <div
+                    onMouseEnter={() => {
+                        if (!canHover) return;
+                        cancelClose();
+                    }}
+                    onMouseLeave={() => {
+                        if (!canHover) return;
+                        scheduleClose(closeDesktopFlyout, 120);
+                    }}
+                >
                     {/* NAV BAR */}
                     <div className="bg-[#f5f5f7]/95 dark:bg-[#1d1d1f]/95 backdrop-blur">
                         <div className="mx-auto max-w-[1470px]">
                             <nav
                                 aria-label="Apple global navigation"
                                 className="mx-auto max-w-[1024px] h-11 flex items-center justify-center
-                         text-[13px] text-[#1d1d1f]/80 dark:text-[#f5f5f7]/80"
+                text-[13px] text-[#1d1d1f]/80 dark:text-[#f5f5f7]/80"
                             >
                                 <ul
                                     id="globalnav-list"
                                     className="flex h-11 w-full max-w-[996px] items-center justify-between
-                           list-none mx-[-8px] leading-[25px] tracking-[-0.374px]"
+                  list-none mx-[-8px] leading-[25px] tracking-[-0.374px]"
                                 >
                                     {/* Logo  */}
                                     <li className="flex h-11 w-[30px] items-center justify-center">
@@ -467,7 +492,6 @@ export default function Header() {
                                                     href={item.href}
                                                     className="relative py-[2px] transition hover:text-[#1d1d1f] dark:hover:text-white hover:translate-y-[1px]"
                                                     onMouseEnter={() => {
-                                                        // ✅ Hover flyout only on devices that truly support hover
                                                         if (!canHover) return;
                                                         dropdown ? setOpenKey(item.menuKey) : closeDesktopFlyout();
                                                     }}
@@ -516,7 +540,7 @@ export default function Header() {
                         </div>
                     </div>
 
-                    {/* 2) Desktop overlay: CLICK/TAP to close flyout */}
+                    {/* Desktop overlay: click to close flyout */}
                     {isDesktopFlyoutOpen && (
                         <button
                             type="button"
