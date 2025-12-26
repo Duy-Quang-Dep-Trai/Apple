@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import FlyoutMenu from "./FlyoutMenu";
 import { useHoverIntent } from "./useHoverIntent";
 
@@ -16,7 +16,12 @@ import { entertainmentMenu } from "./Menu/Entertainment/menu";
 import { accessoriesMenu } from "./Menu/accessories/menu";
 import { supportMenu } from "./Menu/Support/menu";
 
-// 1) OpenKey: chỉ những cái có dropdown
+/**
+ * Header (Apple-like globalnav)
+ * - Desktop: hover flyout (only on real hover devices)
+ * - Mobile: fullscreen menu overlay + focus trap + body scroll lock
+ */
+
 type OpenKey =
     | "store"
     | "mac"
@@ -30,24 +35,14 @@ type OpenKey =
     | "support"
     | null;
 
-// 2) NavItem types
-type NavItemBase = {
-    label: string;
-    href: string;
-};
-
-type NavItemWithMenu = NavItemBase & {
-    menuKey: Exclude<OpenKey, null>;
-};
-
+type NavItemBase = { label: string; href: string };
+type NavItemWithMenu = NavItemBase & { menuKey: Exclude<OpenKey, null> };
 type NavItem = NavItemBase | NavItemWithMenu;
 
-// 3) type guard
 function hasMenu(item: NavItem): item is NavItemWithMenu {
     return "menuKey" in item;
 }
 
-// 4) navItems typed chắc chắn -> không ra string|undefined
 const navItems = [
     { label: "Cửa Hàng", href: "/store", menuKey: "store" },
     { label: "Mac", href: "/mac", menuKey: "mac" },
@@ -61,34 +56,76 @@ const navItems = [
     { label: "Hỗ Trợ", href: "/support", menuKey: "support" },
 ] satisfies readonly NavItem[];
 
+function getFocusable(container: HTMLElement | null) {
+    if (!container) return [];
+    const selectors = [
+        "a[href]",
+        "button:not([disabled])",
+        "input:not([disabled])",
+        "select:not([disabled])",
+        "textarea:not([disabled])",
+        "[tabindex]:not([tabindex='-1'])",
+    ].join(",");
+    return Array.from(container.querySelectorAll<HTMLElement>(selectors)).filter(
+        (el) => !el.hasAttribute("disabled") && el.tabIndex !== -1 && !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length)
+    );
+}
+
 export default function Header() {
-    // Desktop flyout state
+    // Desktop flyout
     const [openKey, setOpenKey] = useState<OpenKey>(null);
     const { cancelClose, scheduleClose } = useHoverIntent();
 
-    // Mobile menu state
+    // Mobile overlay menu
     const [mobileOpen, setMobileOpen] = useState(false);
 
-    const closeAll = () => setOpenKey(null);
+    // ✅ Hover capability gate (real hover devices only)
+    const [canHover, setCanHover] = useState(false);
 
     // ✅ Only open by focus when user is using keyboard
     const lastInputWasKeyboard = useRef(false);
 
+    // Focus trap refs (mobile)
+    const mobileOverlayRef = useRef<HTMLDivElement | null>(null);
+    const restoreFocusRef = useRef<HTMLElement | null>(null);
+
+    const closeDesktopFlyout = useCallback(() => setOpenKey(null), []);
+    const closeMobileMenu = useCallback(() => setMobileOpen(false), []);
+    const closeAll = useCallback(() => {
+        setOpenKey(null);
+        setMobileOpen(false);
+    }, []);
+
+    // =========================
+    // 1) Detect "real hover" device
+    //    (hover: hover) and (pointer: fine)
+    // =========================
+    useEffect(() => {
+        const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+
+        const update = () => setCanHover(mq.matches);
+        update();
+
+        // Safari compatibility: use addEventListener if available, else addListener
+        if (typeof mq.addEventListener === "function") {
+            mq.addEventListener("change", update);
+            return () => mq.removeEventListener("change", update);
+        } else {
+            mq.addListener(update);
+            return () => mq.removeListener(update);
+        }
+    }, []);
+
+    // =========================
+    // Track keyboard vs pointer input
+    // =========================
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
-            // Tab / Arrow / Enter / Space
-            if (
-                e.key === "Tab" ||
-                e.key === "Enter" ||
-                e.key === " " ||
-                e.key.startsWith("Arrow")
-            ) {
+            if (e.key === "Tab" || e.key === "Enter" || e.key === " " || e.key.startsWith("Arrow")) {
                 lastInputWasKeyboard.current = true;
             }
         };
-
         const onPointerDown = () => {
-            // mouse / touch
             lastInputWasKeyboard.current = false;
         };
 
@@ -102,34 +139,122 @@ export default function Header() {
     }, []);
 
     const openByFocus = (key: Exclude<OpenKey, null>) => {
-        if (!lastInputWasKeyboard.current) return; // block focus restore / mouse click focus
+        // only for keyboard navigation
+        if (!lastInputWasKeyboard.current) return;
         setOpenKey(key);
     };
 
-    // ✅ Close menus when tab becomes hidden (Alt+Tab / switch tabs)
+    // =========================
+    // Close menus when tab becomes hidden
+    // =========================
     useEffect(() => {
         const handleVisibility = () => {
-            if (document.visibilityState === "hidden") {
-                closeAll();
-                setMobileOpen(false);
-            }
+            if (document.visibilityState === "hidden") closeAll();
         };
-
         document.addEventListener("visibilitychange", handleVisibility);
         return () => document.removeEventListener("visibilitychange", handleVisibility);
-    }, []);
+    }, [closeAll]);
 
-    // ✅ Optional: ESC closes both desktop flyout and mobile menu
+    // =========================
+    // ESC closes both desktop flyout and mobile menu
+    // =========================
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                closeAll();
-                setMobileOpen(false);
-            }
+            if (e.key === "Escape") closeAll();
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, []);
+    }, [closeAll]);
+
+    // =========================
+    // 3) Lock body scroll when mobile menu is open (iOS safe)
+    // =========================
+    useEffect(() => {
+        if (!mobileOpen) return;
+
+        const body = document.body;
+        const html = document.documentElement;
+
+        // Save current styles to restore later
+        const prevBodyOverflow = body.style.overflow;
+        const prevBodyPosition = body.style.position;
+        const prevBodyTop = body.style.top;
+        const prevHtmlOverflow = html.style.overflow;
+
+        const scrollY = window.scrollY;
+
+        // Common iOS-safe approach: fix body position
+        html.style.overflow = "hidden";
+        body.style.overflow = "hidden";
+        body.style.position = "fixed";
+        body.style.top = `-${scrollY}px`;
+        body.style.width = "100%";
+
+        return () => {
+            // Restore
+            const top = body.style.top;
+            html.style.overflow = prevHtmlOverflow;
+            body.style.overflow = prevBodyOverflow;
+            body.style.position = prevBodyPosition;
+            body.style.top = prevBodyTop;
+            body.style.width = "";
+
+            // Restore scroll position
+            const y = top ? -parseInt(top, 10) : scrollY;
+            window.scrollTo(0, y);
+        };
+    }, [mobileOpen]);
+
+    // =========================
+    // 4) Focus trap for mobile overlay + restore focus on close
+    // =========================
+    useEffect(() => {
+        if (!mobileOpen) return;
+
+        // Remember what was focused before opening
+        restoreFocusRef.current = document.activeElement as HTMLElement | null;
+
+        // Move focus into overlay (first focusable)
+        const focusables = getFocusable(mobileOverlayRef.current);
+        (focusables[0] ?? mobileOverlayRef.current)?.focus?.();
+
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key !== "Tab") return;
+
+            const container = mobileOverlayRef.current;
+            const items = getFocusable(container);
+            if (items.length === 0) {
+                e.preventDefault();
+                return;
+            }
+
+            const first = items[0];
+            const last = items[items.length - 1];
+            const active = document.activeElement as HTMLElement | null;
+
+            // Shift+Tab on first -> loop to last
+            if (e.shiftKey && active === first) {
+                e.preventDefault();
+                last.focus();
+                return;
+            }
+
+            // Tab on last -> loop to first
+            if (!e.shiftKey && active === last) {
+                e.preventDefault();
+                first.focus();
+                return;
+            }
+        };
+
+        document.addEventListener("keydown", onKeyDown, true);
+        return () => {
+            document.removeEventListener("keydown", onKeyDown, true);
+            // Restore focus to where user was
+            restoreFocusRef.current?.focus?.();
+            restoreFocusRef.current = null;
+        };
+    }, [mobileOpen]);
 
     const isDesktopFlyoutOpen = openKey !== null;
 
@@ -155,7 +280,6 @@ export default function Header() {
 
     return (
         <header className="sticky top-0 z-50 relative">
-            {/* ================= MOBILE HEADER (Apple-like) ================= */}
             {/* ================= MOBILE HEADER (Apple mobile layout) ================= */}
             <div className="md:hidden">
                 <div className="bg-[#f5f5f7]/95 dark:bg-[#1d1d1f]/95 backdrop-blur">
@@ -172,14 +296,14 @@ export default function Header() {
 
                         {/* RIGHT: Search + Bag + Menu */}
                         <div className="ml-auto flex items-center gap-3">
-                            {/* Search (y hệt desktop) */}
+                            {/* Search (same SVG as desktop) */}
                             <button
                                 aria-label="Tìm kiếm"
                                 className="flex h-8 w-8 items-center justify-center hover:opacity-80"
                                 type="button"
                                 onClick={() => {
-                                    setMobileOpen(false);
-                                    closeAll();
+                                    closeDesktopFlyout();
+                                    closeMobileMenu();
                                     // TODO: open search overlay
                                 }}
                             >
@@ -188,14 +312,14 @@ export default function Header() {
                                 </svg>
                             </button>
 
-                            {/* Bag (y hệt desktop) */}
+                            {/* Bag (same SVG as desktop) */}
                             <button
                                 aria-label="Giỏ hàng"
                                 className="flex h-8 w-8 items-center justify-center hover:opacity-80"
                                 type="button"
                                 onClick={() => {
-                                    setMobileOpen(false);
-                                    closeAll();
+                                    closeDesktopFlyout();
+                                    closeMobileMenu();
                                     // TODO: open bag
                                 }}
                             >
@@ -209,6 +333,7 @@ export default function Header() {
                                 id="globalnav-menutrigger-button"
                                 className="flex h-8 w-8 items-center justify-center hover:opacity-80"
                                 aria-controls="mobile-globalnav-list"
+                                aria-expanded={mobileOpen}
                                 aria-label={mobileOpen ? "Close" : "Menu"}
                                 type="button"
                                 onClick={() => setMobileOpen((v) => !v)}
@@ -238,8 +363,13 @@ export default function Header() {
                     </div>
                 </div>
 
-                {/* ================= MOBILE MENU OVERLAY (list) ================= */}
+                {/* ================= MOBILE MENU OVERLAY (focus trap inside) ================= */}
                 <div
+                    ref={mobileOverlayRef}
+                    tabIndex={-1}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Menu"
                     className={[
                         "fixed inset-0 z-[100]",
                         "bg-[#f5f5f7] dark:bg-[#1d1d1f]",
@@ -276,10 +406,9 @@ export default function Header() {
                 </div>
             </div>
 
-
-            {/* ================= DESKTOP HEADER (your current header) ================= */}
+            {/* ================= DESKTOP HEADER (hover flyout only on real hover devices) ================= */}
             <div className="hidden md:block">
-                <div onMouseEnter={cancelClose} onMouseLeave={() => scheduleClose(closeAll, 120)}>
+                <div onMouseEnter={cancelClose} onMouseLeave={() => scheduleClose(closeDesktopFlyout, 120)}>
                     {/* NAV BAR */}
                     <div className="bg-[#f5f5f7]/95 dark:bg-[#1d1d1f]/95 backdrop-blur">
                         <div className="mx-auto max-w-[1470px]">
@@ -295,10 +424,7 @@ export default function Header() {
                                 >
                                     {/* Logo  */}
                                     <li className="flex h-11 w-[30px] items-center justify-center">
-                                        <Link
-                                            href="/"
-                                            className="flex h-7 w-7 items-center justify-center hover:opacity-80 cursor-pointer"
-                                        >
+                                        <Link href="/" className="flex h-7 w-7 items-center justify-center hover:opacity-80 cursor-pointer">
                                             <span className="text-xl leading-none"></span>
                                         </Link>
                                     </li>
@@ -312,9 +438,13 @@ export default function Header() {
                                                 <Link
                                                     href={item.href}
                                                     className="relative py-[2px] transition hover:text-[#1d1d1f] dark:hover:text-white hover:translate-y-[1px]"
-                                                    onMouseEnter={() => (dropdown ? setOpenKey(item.menuKey) : closeAll())}
-                                                    onFocus={() => (dropdown ? openByFocus(item.menuKey) : closeAll())}
-                                                    onClick={closeAll} // ✅ click closes flyout
+                                                    onMouseEnter={() => {
+                                                        // ✅ Hover flyout only on devices that truly support hover
+                                                        if (!canHover) return;
+                                                        dropdown ? setOpenKey(item.menuKey) : closeDesktopFlyout();
+                                                    }}
+                                                    onFocus={() => (dropdown ? openByFocus(item.menuKey) : closeDesktopFlyout())}
+                                                    onClick={closeDesktopFlyout}
                                                     aria-expanded={dropdown ? openKey === item.menuKey : undefined}
                                                     aria-controls={dropdown ? `globalnav-submenu-${item.menuKey}` : undefined}
                                                 >
@@ -329,8 +459,8 @@ export default function Header() {
                                         <button
                                             aria-label="Tìm kiếm"
                                             className="flex h-7 w-7 items-center justify-center hover:opacity-80"
-                                            onMouseEnter={closeAll}
-                                            onFocus={closeAll}
+                                            onMouseEnter={closeDesktopFlyout}
+                                            onFocus={closeDesktopFlyout}
                                             type="button"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="44" viewBox="0 0 15 44" className="fill-current">
@@ -344,8 +474,8 @@ export default function Header() {
                                         <button
                                             aria-label="Giỏ hàng"
                                             className="flex h-7 w-7 items-center justify-center hover:opacity-80"
-                                            onMouseEnter={closeAll}
-                                            onFocus={closeAll}
+                                            onMouseEnter={closeDesktopFlyout}
+                                            onFocus={closeDesktopFlyout}
                                             type="button"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="44" viewBox="0 0 14 44" className="fill-current">
@@ -358,10 +488,13 @@ export default function Header() {
                         </div>
                     </div>
 
-                    {/* Overlay mờ phần dưới (không mờ nav) */}
+                    {/* 2) Desktop overlay: CLICK/TAP to close flyout */}
                     {isDesktopFlyoutOpen && (
-                        <div
-                            className="fixed left-0 right-0 bottom-0 bg-black/10 backdrop-blur-[6px] pointer-events-none"
+                        <button
+                            type="button"
+                            aria-label="Đóng menu"
+                            onClick={closeDesktopFlyout}
+                            className="fixed left-0 right-0 bottom-0 bg-black/10 backdrop-blur-[6px]"
                             style={{ top: "44px" }}
                         />
                     )}
@@ -369,12 +502,7 @@ export default function Header() {
                     {/* Flyout */}
                     {activeMenu && (
                         <div id={activeId}>
-                            <FlyoutMenu
-                                open={isDesktopFlyoutOpen}
-                                menu={activeMenu}
-                                id={activeId}
-                                onNavigate={closeAll}
-                            />
+                            <FlyoutMenu open={isDesktopFlyoutOpen} menu={activeMenu} id={activeId} onNavigate={closeDesktopFlyout} />
                         </div>
                     )}
                 </div>
