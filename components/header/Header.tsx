@@ -77,7 +77,11 @@ export default function Header() {
     const { cancelClose, scheduleClose } = useHoverIntent();
 
     // Mobile overlay menu
-    const [mobileOpen, setMobileOpen] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(true);
+    // Mobile menu: mount/unmount để animation không bị “lóe”
+    const [mobileMounted, setMobileMounted] = useState(false);
+    const MOBILE_ANIM_MS = 240; // gần Apple timing
+
 
     // ✅ Hover capability gate (real hover devices only)
     const [canHover, setCanHover] = useState(false);
@@ -137,6 +141,17 @@ export default function Header() {
             window.removeEventListener("pointerdown", onPointerDown, true);
         };
     }, []);
+    useEffect(() => {
+        if (mobileOpen) {
+            setMobileMounted(true); // mount trước
+            return;
+        }
+
+        // nếu đang đóng: đợi animation chạy xong mới unmount
+        const t = window.setTimeout(() => setMobileMounted(false), MOBILE_ANIM_MS);
+        return () => window.clearTimeout(t);
+    }, [mobileOpen]);
+
 
     const openByFocus = (key: Exclude<OpenKey, null>) => {
         // only for keyboard navigation
@@ -364,46 +379,59 @@ export default function Header() {
                 </div>
 
                 {/* ================= MOBILE MENU OVERLAY (focus trap inside) ================= */}
-                <div
-                    ref={mobileOverlayRef}
-                    tabIndex={-1}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Menu"
-                    className={[
-                        "fixed inset-0 z-[100]",
-                        "bg-[#f5f5f7] dark:bg-[#1d1d1f]",
-                        "transition-[opacity,transform] duration-200 ease-out",
-                        mobileOpen ? "opacity-100 translate-y-0" : "pointer-events-none opacity-0 -translate-y-1",
-                    ].join(" ")}
-                    aria-hidden={!mobileOpen}
-                >
-                    <div className="flex h-11 items-center justify-end px-4 border-b border-black/10 dark:border-white/10">
-                        <button
-                            aria-label="Đóng menu"
-                            type="button"
-                            onClick={() => setMobileOpen(false)}
-                            className="flex h-8 w-8 items-center justify-center hover:opacity-80 text-[#1d1d1f] dark:text-[#f5f5f7]"
-                        >
-                            <span className="text-[18px] leading-none">✕</span>
-                        </button>
-                    </div>
+                {/* ================= MOBILE MENU OVERLAY (list) ================= */}
+                {mobileMounted && (
+                    <div
+                        ref={mobileOverlayRef}
+                        tabIndex={-1}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Menu"
+                        className={[
+                            "fixed inset-0 z-[100]",
+                            "bg-[#f5f5f7] dark:bg-[#1d1d1f]",
+                            "transition-[opacity,transform] duration-[240ms]",
+                            "ease-[cubic-bezier(0.42,0,0.58,1)]", // mượt kiểu Apple
+                            "will-change-[transform,opacity]",
+                            mobileOpen
+                                ? "opacity-100 translate-y-0"
+                                : "opacity-0 -translate-y-2 pointer-events-none",
+                        ].join(" ")}
+                    >
+                        {/* top bar */}
+                        <div className="flex h-11 items-center justify-end px-4 border-b border-black/10 dark:border-white/10">
+                            <button
+                                aria-label="Đóng menu"
+                                type="button"
+                                onClick={() => setMobileOpen(false)}
+                                className="flex h-8 w-8 items-center justify-center hover:opacity-80 text-[#1d1d1f] dark:text-[#f5f5f7]"
+                            >
+                                <span className="text-[18px] leading-none">✕</span>
+                            </button>
+                        </div>
 
-                    <nav className="px-6 pt-6" aria-label="Mobile global navigation">
-                        <ul
-                            id="mobile-globalnav-list"
-                            className="space-y-4 text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] dark:text-white"
-                        >
-                            {navItems.map((item) => (
-                                <li key={item.href}>
-                                    <Link href={item.href} onClick={() => setMobileOpen(false)} className="block">
-                                        {item.label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </nav>
-                </div>
+                        {/* list */}
+                        <nav className="px-6 pt-6" aria-label="Mobile global navigation">
+                            <ul
+                                id="mobile-globalnav-list"
+                                className="space-y-4 text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] dark:text-white"
+                            >
+                                {navItems.map((item) => (
+                                    <li key={item.href}>
+                                        <Link
+                                            href={item.href}
+                                            onClick={() => setMobileOpen(false)}
+                                            className="block"
+                                        >
+                                            {item.label}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
+                    </div>
+                )}
+
             </div>
 
             {/* ================= DESKTOP HEADER (hover flyout only on real hover devices) ================= */}
