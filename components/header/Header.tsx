@@ -19,12 +19,12 @@ import { supportMenu } from "./Menu/Support/menu";
 /**
  * Header (Apple-like globalnav)
  * - Desktop: hover flyout (only on real hover devices)
- * - Mobile: fullscreen overlay + focus trap + iOS-safe scroll lock
+ * - Mobile: fullscreen menu overlay + focus trap + iOS-safe scroll lock
  *
- * MOBILE IMPROVEMENTS:
- * - "Drop" from top with Apple-ish easing
- * - Stagger list items
- * - Hamburger morph to X using SVG <animate> (SMIL) like Apple
+ * NOTE: Desktop code giữ nguyên như bạn nói. Chỉ chỉnh "mượt" mobile:
+ * - Icon morph: 240ms (Apple-ish)
+ * - Panel drop: 380ms + easing settle
+ * - List stagger: start delay 110ms + step 34ms
  */
 
 type OpenKey =
@@ -80,6 +80,14 @@ function getFocusable(container: HTMLElement | null) {
     );
 }
 
+// =========================
+// Apple-ish timing for mobile
+// =========================
+const ICON_ANIM_MS = 240;
+const PANEL_ANIM_MS = 380;
+const STAGGER_BASE_DELAY = 110;
+const STAGGER_STEP = 34;
+
 export default function Header() {
     // Desktop flyout
     const [openKey, setOpenKey] = useState<OpenKey>(null);
@@ -89,24 +97,15 @@ export default function Header() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [mobileMounted, setMobileMounted] = useState(false);
 
-    // Apple-ish timing
-    const MOBILE_ANIM_MS = 240;
-
-    // Hover capability gate
+    // Hover capability gate: only hover devices
     const [canHover, setCanHover] = useState(false);
 
-    // Track keyboard vs pointer input
+    // Track keyboard vs pointer
     const lastInputWasKeyboard = useRef(false);
 
     // Focus trap refs (mobile)
     const mobileOverlayRef = useRef<HTMLDivElement | null>(null);
     const restoreFocusRef = useRef<HTMLElement | null>(null);
-
-    // SVG animate refs (SMIL like Apple)
-    const animTopOpenRef = useRef<SVGAnimateElement | null>(null);
-    const animTopCloseRef = useRef<SVGAnimateElement | null>(null);
-    const animBotOpenRef = useRef<SVGAnimateElement | null>(null);
-    const animBotCloseRef = useRef<SVGAnimateElement | null>(null);
 
     const closeDesktopFlyout = useCallback(() => setOpenKey(null), []);
     const closeMobileMenu = useCallback(() => setMobileOpen(false), []);
@@ -116,7 +115,8 @@ export default function Header() {
     }, []);
 
     // =========================
-    // 1) Detect real hover device
+    // 1) Detect "real hover" device
+    //    (hover: hover) and (pointer: fine)
     // =========================
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -135,14 +135,20 @@ export default function Header() {
     }, []);
 
     // =========================
-    // Track keyboard vs pointer
+    // Track keyboard vs pointer input
     // =========================
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Tab" || e.key === "Enter" || e.key === " " || e.key.startsWith("Arrow")) {
+            if (
+                e.key === "Tab" ||
+                e.key === "Enter" ||
+                e.key === " " ||
+                e.key.startsWith("Arrow")
+            ) {
                 lastInputWasKeyboard.current = true;
             }
         };
+
         const onPointerDown = () => {
             lastInputWasKeyboard.current = false;
         };
@@ -157,47 +163,27 @@ export default function Header() {
     }, []);
 
     // =========================
-    // Mobile mount/unmount
+    // Mobile mount/unmount:
+    // - mount ngay khi mở
+    // - unmount sau khi animation đóng chạy xong (PANEL_ANIM_MS)
     // =========================
     useEffect(() => {
         if (mobileOpen) {
             setMobileMounted(true);
             return;
         }
-        const t = window.setTimeout(() => setMobileMounted(false), MOBILE_ANIM_MS);
+        const t = window.setTimeout(() => setMobileMounted(false), PANEL_ANIM_MS);
         return () => window.clearTimeout(t);
     }, [mobileOpen]);
 
-    // =========================
-    // Apple-like icon morph sync
-    // - start open anim when mobileOpen=true
-    // - start close anim when mobileOpen=false (but only after first mount)
-    // =========================
-    const hasEverOpenedRef = useRef(false);
-    useEffect(() => {
-        // On first render, do nothing
-        if (!hasEverOpenedRef.current && !mobileOpen) return;
-
-        if (mobileOpen) {
-            hasEverOpenedRef.current = true;
-            // begin open
-            animTopOpenRef.current?.beginElement?.();
-            animBotOpenRef.current?.beginElement?.();
-        } else {
-            // begin close
-            animTopCloseRef.current?.beginElement?.();
-            animBotCloseRef.current?.beginElement?.();
-        }
-    }, [mobileOpen]);
-
-    // Desktop: open by focus only if keyboard
+    // Desktop: open by focus only if keyboard navigation
     const openByFocus = (key: Exclude<OpenKey, null>) => {
         if (!lastInputWasKeyboard.current) return;
         setOpenKey(key);
     };
 
     // =========================
-    // Close when tab hidden
+    // Close menus when tab becomes hidden
     // =========================
     useEffect(() => {
         const handleVisibility = () => {
@@ -208,7 +194,7 @@ export default function Header() {
     }, [closeAll]);
 
     // =========================
-    // ESC closes all
+    // ESC closes both desktop flyout and mobile menu
     // =========================
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
@@ -219,7 +205,7 @@ export default function Header() {
     }, [closeAll]);
 
     // =========================
-    // iOS-safe scroll lock (mobile open)
+    // iOS-safe scroll lock when mobile menu open
     // =========================
     useEffect(() => {
         if (!mobileOpen) return;
@@ -302,9 +288,6 @@ export default function Header() {
         };
     }, [mobileOpen]);
 
-    // =========================
-    // Desktop flyout menu selection
-    // =========================
     const isDesktopFlyoutOpen = openKey !== null;
 
     const activeMenu = useMemo(() => {
@@ -323,14 +306,13 @@ export default function Header() {
 
     const activeId = openKey ? `globalnav-submenu-${openKey}` : undefined;
 
-    // =========================
-    // Mobile toggle handler (sync icon + menu)
-    // =========================
-    const toggleMobile = () => setMobileOpen((v) => !v);
+    // Apple-like menutrigger morph points
+    const menuTopPoints = mobileOpen ? "3.5 3.5, 15 15" : "2 5, 16 5";
+    const menuBottomPoints = mobileOpen ? "3.5 15, 15 3.5" : "2 12, 16 12";
 
     return (
         <header className="sticky top-0 z-50 relative">
-            {/* ================= MOBILE HEADER ================= */}
+            {/* ================= MOBILE HEADER (Apple mobile layout) ================= */}
             <div className="md:hidden">
                 <div className="bg-[#f5f5f7]/95 dark:bg-[#1d1d1f]/95 backdrop-blur">
                     <div className="mx-auto h-11 px-4 flex items-center text-[#1d1d1f]/80 dark:text-[#f5f5f7]/80">
@@ -357,7 +339,13 @@ export default function Header() {
                                     // TODO: open search overlay
                                 }}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="44" viewBox="0 0 15 44" className="fill-current">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="15"
+                                    height="44"
+                                    viewBox="0 0 15 44"
+                                    className="fill-current"
+                                >
                                     <path d="M14.298,27.202l-3.87-3.87c0.701-0.929,1.122-2.081,1.122-3.332c0-3.06-2.489-5.55-5.55-5.55c-3.06,0-5.55,2.49-5.55,5.55 c0,3.061,2.49,5.55,5.55,5.55c1.251,0,2.403-0.421,3.332-1.122l3.87,3.87c0.151,0.151,0.35,0.228,0.548,0.228 s0.396-0.076,0.548-0.228C14.601,27.995,14.601,27.505,14.298,27.202z M1.55,20c0-2.454,1.997-4.45,4.45-4.45 c2.454,0,4.45,1.997,4.45,4.45S8.454,24.45,6,24.45C3.546,24.45,1.55,22.454,1.55,20z"></path>
                                 </svg>
                             </button>
@@ -373,12 +361,18 @@ export default function Header() {
                                     // TODO: open bag
                                 }}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="44" viewBox="0 0 14 44" className="fill-current">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="14"
+                                    height="44"
+                                    viewBox="0 0 14 44"
+                                    className="fill-current"
+                                >
                                     <path d="m11.3535 16.0283h-1.0205a3.4229 3.4229 0 0 0 -3.333-2.9648 3.4229 3.4229 0 0 0 -3.333 2.9648h-1.02a2.1184 2.1184 0 0 0 -2.117 2.1162v7.7155a2.1186 2.1186 0 0 0 2.1162 2.1167h8.707a2.1186 2.1186 0 0 0 2.1168-2.1167v-7.7155a2.1184 2.1184 0 0 0 -2.1165-2.1162zm-4.3535-1.8652a2.3169 2.3169 0 0 1 2.2222 1.8652h-4.4444a2.3169 2.3169 0 0 1 2.2222-1.8652zm5.37 11.6969a1.0182 1.0182 0 0 1 -1.0166 1.0171h-8.7069a1.0182 1.0182 0 0 1 -1.0165-1.0171v-7.7155a1.0178 1.0178 0 0 1 1.0166-1.0166h8.707a1.0178 1.0178 0 0 1 1.0164 1.0166z"></path>
                                 </svg>
                             </button>
 
-                            {/* Menu trigger - Apple SMIL morph */}
+                            {/* Menu trigger (morph like Apple) */}
                             <button
                                 id="globalnav-menutrigger-button"
                                 className="flex h-8 w-8 items-center justify-center hover:opacity-80"
@@ -386,10 +380,9 @@ export default function Header() {
                                 aria-expanded={mobileOpen}
                                 aria-label={mobileOpen ? "Close" : "Menu"}
                                 type="button"
-                                onClick={toggleMobile}
+                                onClick={() => setMobileOpen((v) => !v)}
                             >
                                 <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-                                    {/* Bottom bread */}
                                     <polyline
                                         id="globalnav-menutrigger-bread-bottom"
                                         fill="none"
@@ -397,14 +390,13 @@ export default function Header() {
                                         strokeWidth="1.2"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
-                                        points="2 12, 16 12"
+                                        points={mobileOpen ? "3.5 15, 15 3.5" : "2 12, 16 12"}
                                     >
                                         <animate
-                                            ref={animBotOpenRef}
                                             id="globalnav-anim-menutrigger-bread-bottom-open"
                                             attributeName="points"
                                             keyTimes="0;0.5;1"
-                                            dur={`${MOBILE_ANIM_MS}ms`}
+                                            dur={`${ICON_ANIM_MS}ms`}
                                             begin="indefinite"
                                             fill="freeze"
                                             calcMode="spline"
@@ -412,11 +404,10 @@ export default function Header() {
                                             values="2 12, 16 12; 2 9, 16 9; 3.5 15, 15 3.5"
                                         />
                                         <animate
-                                            ref={animBotCloseRef}
                                             id="globalnav-anim-menutrigger-bread-bottom-close"
                                             attributeName="points"
                                             keyTimes="0;0.5;1"
-                                            dur={`${MOBILE_ANIM_MS}ms`}
+                                            dur={`${ICON_ANIM_MS}ms`}
                                             begin="indefinite"
                                             fill="freeze"
                                             calcMode="spline"
@@ -425,7 +416,6 @@ export default function Header() {
                                         />
                                     </polyline>
 
-                                    {/* Top bread */}
                                     <polyline
                                         id="globalnav-menutrigger-bread-top"
                                         fill="none"
@@ -433,14 +423,13 @@ export default function Header() {
                                         strokeWidth="1.2"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
-                                        points="2 5, 16 5"
+                                        points={mobileOpen ? "3.5 3.5, 15 15" : "2 5, 16 5"}
                                     >
                                         <animate
-                                            ref={animTopOpenRef}
                                             id="globalnav-anim-menutrigger-bread-top-open"
                                             attributeName="points"
                                             keyTimes="0;0.5;1"
-                                            dur={`${MOBILE_ANIM_MS}ms`}
+                                            dur={`${ICON_ANIM_MS}ms`}
                                             begin="indefinite"
                                             fill="freeze"
                                             calcMode="spline"
@@ -448,11 +437,10 @@ export default function Header() {
                                             values="2 5, 16 5; 2 9, 16 9; 3.5 3.5, 15 15"
                                         />
                                         <animate
-                                            ref={animTopCloseRef}
                                             id="globalnav-anim-menutrigger-bread-top-close"
                                             attributeName="points"
                                             keyTimes="0;0.5;1"
-                                            dur={`${MOBILE_ANIM_MS}ms`}
+                                            dur={`${ICON_ANIM_MS}ms`}
                                             begin="indefinite"
                                             fill="freeze"
                                             calcMode="spline"
@@ -466,6 +454,8 @@ export default function Header() {
                     </div>
                 </div>
 
+                {/* Trigger SMIL open/close animations */}
+                <MobileMenuIconAnimator mobileOpen={mobileOpen} />
                 {/* ================= MOBILE MENU OVERLAY ================= */}
                 {mobileMounted && (
                     <div
@@ -475,28 +465,22 @@ export default function Header() {
                         aria-modal="true"
                         aria-label="Menu"
                         className={[
-                            // Keep layout, just overlay
                             "fixed inset-0 z-[100]",
                             "bg-[#f5f5f7] dark:bg-[#1d1d1f]",
+                            "pt-[50px]",
 
-                            // "Drop" effect: translateY + slight scale + opacity
                             "transform-gpu will-change-[transform,opacity]",
                             "transition-[opacity,transform]",
-                            `duration-[${MOBILE_ANIM_MS}ms]`,
-
-                            // Apple-ish: first half quick, second half settle
-                            "ease-[cubic-bezier(0.42,0,0.58,1)]",
-
-                            // Add top spacing like Apple (they have padding-top around 50px)
-                            "pt-[50px]",
+                            `duration-[${PANEL_ANIM_MS}ms]`,
+                            "ease-[cubic-bezier(0.16,1,0.3,1)]",
 
                             mobileOpen
                                 ? "opacity-100 translate-y-0 scale-100"
-                                : "opacity-0 -translate-y-3 scale-[0.985] pointer-events-none",
+                                : "opacity-0 -translate-y-4 scale-[0.99] pointer-events-none",
                         ].join(" ")}
                     >
-                        {/* List (no extra close X; Apple uses the same trigger morph) */}
-                        <nav className="px-6" aria-label="Mobile global navigation">
+                        {/* list */}
+                        <nav className="px-6 pt-6" aria-label="Mobile global navigation">
                             <ul
                                 id="mobile-globalnav-list"
                                 className="space-y-4 text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] dark:text-white"
@@ -506,20 +490,17 @@ export default function Header() {
                                         key={item.href}
                                         className={[
                                             "transition-[opacity,transform]",
-                                            // Apple-like stagger: slow enough to feel "light"
                                             "duration-[420ms]",
-                                            "ease-[cubic-bezier(0.22,0.61,0.36,1)]",
+                                            "ease-[cubic-bezier(0.22,1,0.36,1)]",
                                             mobileOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2",
                                         ].join(" ")}
                                         style={{
-                                            transitionDelay: mobileOpen ? `${index * 36 + 70}ms` : "0ms",
+                                            transitionDelay: mobileOpen
+                                                ? `${index * STAGGER_STEP + STAGGER_BASE_DELAY}ms`
+                                                : "0ms",
                                         }}
                                     >
-                                        <Link
-                                            href={item.href}
-                                            onClick={() => setMobileOpen(false)}
-                                            className="block"
-                                        >
+                                        <Link href={item.href} onClick={closeAll} className="block">
                                             {item.label}
                                         </Link>
                                     </li>
@@ -530,7 +511,7 @@ export default function Header() {
                 )}
             </div>
 
-            {/* ================= DESKTOP HEADER (UNCHANGED) ================= */}
+            {/* ================= DESKTOP HEADER (GIỮ NGUYÊN) ================= */}
             <div className="hidden md:block">
                 <div
                     onMouseEnter={() => {
@@ -557,7 +538,10 @@ export default function Header() {
                                 >
                                     {/* Logo  */}
                                     <li className="flex h-11 w-[30px] items-center justify-center">
-                                        <Link href="/" className="flex h-7 w-7 items-center justify-center hover:opacity-80 cursor-pointer">
+                                        <Link
+                                            href="/"
+                                            className="flex h-7 w-7 items-center justify-center hover:opacity-80 cursor-pointer"
+                                        >
                                             <span className="text-xl leading-none"></span>
                                         </Link>
                                     </li>
@@ -595,7 +579,13 @@ export default function Header() {
                                             onFocus={closeDesktopFlyout}
                                             type="button"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="44" viewBox="0 0 15 44" className="fill-current">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="15"
+                                                height="44"
+                                                viewBox="0 0 15 44"
+                                                className="fill-current"
+                                            >
                                                 <path d="M14.298,27.202l-3.87-3.87c0.701-0.929,1.122-2.081,1.122-3.332c0-3.06-2.489-5.55-5.55-5.55c-3.06,0-5.55,2.49-5.55,5.55 c0,3.061,2.49,5.55,5.55,5.55c1.251,0,2.403-0.421,3.332-1.122l3.87,3.87c0.151,0.151,0.35,0.228,0.548,0.228 s0.396-0.076,0.548-0.228C14.601,27.995,14.601,27.505,14.298,27.202z M1.55,20c0-2.454,1.997-4.45,4.45-4.45 c2.454,0,4.45,1.997,4.45,4.45S8.454,24.45,6,24.45C3.546,24.45,1.55,22.454,1.55,20z"></path>
                                             </svg>
                                         </button>
@@ -610,7 +600,13 @@ export default function Header() {
                                             onFocus={closeDesktopFlyout}
                                             type="button"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="44" viewBox="0 0 14 44" className="fill-current">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="14"
+                                                height="44"
+                                                viewBox="0 0 14 44"
+                                                className="fill-current"
+                                            >
                                                 <path d="m11.3535 16.0283h-1.0205a3.4229 3.4229 0 0 0 -3.333-2.9648 3.4229 3.4229 0 0 0 -3.333 2.9648h-1.02a2.1184 2.1184 0 0 0 -2.117 2.1162v7.7155a2.1186 2.1186 0 0 0 2.1162 2.1167h8.707a2.1186 2.1186 0 0 0 2.1168-2.1167v-7.7155a2.1184 2.1184 0 0 0 -2.1165-2.1162zm-4.3535-1.8652a2.3169 2.3169 0 0 1 2.2222 1.8652h-4.4444a2.3169 2.3169 0 0 1 2.2222-1.8652zm5.37 11.6969a1.0182 1.0182 0 0 1 -1.0166 1.0171h-8.7069a1.0182 1.0182 0 0 1 -1.0165-1.0171v-7.7155a1.0178 1.0178 0 0 1 1.0166-1.0166h8.707a1.0178 1.0178 0 0 1 1.0164 1.0166z"></path>
                                             </svg>
                                         </button>
@@ -634,11 +630,49 @@ export default function Header() {
                     {/* Flyout */}
                     {activeMenu && (
                         <div id={activeId}>
-                            <FlyoutMenu open={isDesktopFlyoutOpen} menu={activeMenu} id={activeId} onNavigate={closeDesktopFlyout} />
+                            <FlyoutMenu
+                                open={isDesktopFlyoutOpen}
+                                menu={activeMenu}
+                                id={activeId}
+                                onNavigate={closeDesktopFlyout}
+                            />
                         </div>
                     )}
                 </div>
             </div>
         </header>
     );
+}
+
+/**
+ * Small helper to trigger SMIL animations when mobileOpen changes.
+ * Apple uses <animate begin="indefinite"> and triggers via JS.
+ */
+function MobileMenuIconAnimator({ mobileOpen }: { mobileOpen: boolean }) {
+    useEffect(() => {
+        const openTop = document.getElementById(
+            "globalnav-anim-menutrigger-bread-top-open"
+        ) as SVGAnimateElement | null;
+        const openBottom = document.getElementById(
+            "globalnav-anim-menutrigger-bread-bottom-open"
+        ) as SVGAnimateElement | null;
+
+        const closeTop = document.getElementById(
+            "globalnav-anim-menutrigger-bread-top-close"
+        ) as SVGAnimateElement | null;
+        const closeBottom = document.getElementById(
+            "globalnav-anim-menutrigger-bread-bottom-close"
+        ) as SVGAnimateElement | null;
+
+        // Some browsers might not support beginElement; in that case, fallback is still fine
+        if (mobileOpen) {
+            openTop?.beginElement?.();
+            openBottom?.beginElement?.();
+        } else {
+            closeTop?.beginElement?.();
+            closeBottom?.beginElement?.();
+        }
+    }, [mobileOpen]);
+
+    return null;
 }
