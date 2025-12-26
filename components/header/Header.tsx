@@ -437,13 +437,33 @@ export default function Header() {
                                 id="mobile-globalnav-list"
                                 className="space-y-4 text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] dark:text-white"
                             >
-                                {navItems.map((item) => (
-                                    <li key={item.href}>
-                                        <Link href={item.href} onClick={() => setMobileOpen(false)} className="block">
+                                {navItems.map((item, index) => (
+                                    <li
+                                        key={item.href}
+                                        className={[
+                                            "transition-[opacity,transform]",
+                                            "duration-[420ms]",
+                                            "ease-[cubic-bezier(0.22,0.61,0.36,1)]",
+                                            mobileOpen
+                                                ? "opacity-100 translate-y-0"
+                                                : "opacity-0 -translate-y-2",
+                                        ].join(" ")}
+                                        style={{
+                                            transitionDelay: mobileOpen
+                                                ? `${index * 40 + 80}ms` // 👈 stagger chuẩn Apple
+                                                : "0ms",
+                                        }}
+                                    >
+                                        <Link
+                                            href={item.href}
+                                            onClick={() => setMobileOpen(false)}
+                                            className="block"
+                                        >
                                             {item.label}
                                         </Link>
                                     </li>
                                 ))}
+
                             </ul>
                         </nav>
                     </div>
