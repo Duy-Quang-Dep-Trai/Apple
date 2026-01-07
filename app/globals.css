@@ -1,15 +1,40 @@
 @import "tailwindcss";
 /* app/globals.css */
-@import "../style//components//store.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root {
+  --globalnav-height: 44px;
+}
+
 
 :root {
+  /* Apple Store container tokens */
+  --store-max: 1470px;
+  --store-gutter: max(24px, calc((100vw - var(--store-max)) / 2));
+
   --background: #f5f5f7;
   --foreground: #1d1d1f;
 
-  /* Ribbon tokens (global) */
+  /* Ribbon tokens */
   --ribbon-background-color: #f5f5f7;
 }
 
+/* 1 container chuẩn: luôn bám gutter */
+.store-container {
+  width: 100%;
+  max-width: var(--store-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--store-gutter);
+  padding-right: var(--store-gutter);
+}
+
+/* Nếu cần section full-bleed nhưng vẫn bám trái/phải như Apple */
+.store-gutter {
+  padding-left: var(--store-gutter);
+  padding-right: var(--store-gutter);
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -31,27 +56,20 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* ===== Gentle Apple-like flyout text reveal ===== */
+/* ===== Flyout text reveal (giữ nguyên của bạn) ===== */
 .globalnav-flyout-item {
   opacity: 0;
   transform: translateY(-6px);
-
   transition-property: opacity, transform;
   transition-duration: 740ms;
   transition-timing-function: ease-in-out;
-
   will-change: opacity, transform;
 }
-
-/* Panel mở: chữ bắt đầu chạy SAU panel một nhịp */
 .globalnav-flyout[aria-hidden="false"] .globalnav-flyout-item {
   opacity: 1;
   transform: translateY(0);
-
-  /* 160ms để panel “xuống” trước, rồi chữ mới chạy */
   transition-delay: calc(260ms + (var(--item-index, 0) * 80ms));
 }
-
 @media (prefers-reduced-motion: reduce) {
   .globalnav-flyout-item {
     transition: none !important;
@@ -59,14 +77,12 @@ body {
     transform: none !important;
   }
 }
-/* ===== Holiday Ribbon (Apple-like) ===== */
 
+/* ===== Holiday Ribbon (giữ nguyên của bạn) ===== */
 .dd-fill-tertiary {
   background-color: #f5f5f7;
   --ribbon-background-color: rgb(245, 245, 247);
 }
-
-/* khối ribbon dưới nav */
 .dd-holiday-202511-header {
   width: 100%;
   height: 88px;
@@ -74,15 +90,12 @@ body {
   overflow: hidden;
   position: relative;
 }
-
 .dd-holiday-202511-header .dd-container {
   max-width: 1470px;
   margin: 0 auto;
   height: 100%;
   position: relative;
 }
-
-/* đổi dd-colors thành absolute inset-0 cho chắc */
 .dd-holiday-202511-header .dd-colors {
   position: absolute;
   inset: 0;
@@ -90,9 +103,6 @@ body {
   opacity: 1;
   transform: translate3d(0, 0, 0);
 }
-
-
-/* “blob” chung */
 .dd-holiday-202511-header .dd-color {
   position: absolute;
   border-radius: 50%;
@@ -100,123 +110,59 @@ body {
   will-change: transform, top, left, right;
   transform: translate3d(0, 0, 0);
 }
-
-/* 4 blob màu (đúng style bạn paste) */
 .dd-holiday-202511-header .dd-blue {
   width: 60vw;
   height: 75px;
-  top: -50px;              /* FINAL (nhìn thấy) */
+  top: -50px;
   left: 0;
   background: #00a0ff;
   transform: translateX(-5%);
   animation: blue-animation 1s ease 0.2s forwards;
 }
-
 .dd-holiday-202511-header .dd-orange {
   width: 50vw;
   height: 50px;
   background: #fa8238;
-  top: -28px;              /* FINAL (nhìn thấy) */
+  top: -28px;
   right: -1vw;
   animation: orange-animation 1.5s ease-out 0.5s forwards;
 }
-
 .dd-holiday-202511-header .dd-yellow-orange {
   width: 25vw;
   height: 150px;
-  background: linear-gradient(
-    90deg,
-    #f1e8c8,
-    #f1e8c8,
-    #f1e8c8,
-    #fdb545,
-    #fdb545,
-    #fa8238
-  );
-  top: -105px;             /* FINAL */
+  background: linear-gradient(90deg, #f1e8c8, #f1e8c8, #f1e8c8, #fdb545, #fdb545, #fa8238);
+  top: -105px;
   right: 30%;
   transform: translateX(-5%);
   animation: yellow-orange-animation 1.2s ease-in-out forwards;
 }
-
 .dd-holiday-202511-header .dd-blue-yellow {
   width: 15vw;
   height: 150px;
-  background: linear-gradient(
-    90deg,
-    #00a0ff,
-    #91dafc,
-    #91dafc,
-    #f1e8c8,
-    #f1e8c8
-  );
-  top: -110px;             /* FINAL */
+  background: linear-gradient(90deg, #00a0ff, #91dafc, #91dafc, #f1e8c8, #f1e8c8);
+  top: -110px;
   left: 35vw;
   transform: scaleX(225%) translateX(0);
   animation: blue-yellow-animation 2s ease-in-out forwards;
 }
-
-/* ===== Keyframes ===== */
-
 @keyframes blue-animation {
-  0% {
-    top: -100px;
-    transform: translateX(0);
-  }
-  50% {
-    top: -50px;
-    transform: translateX(-15%);
-  }
-  100% {
-    top: -50px;
-    transform: translateX(-5%);
-  }
+  0% { top: -100px; transform: translateX(0); }
+  50% { top: -50px; transform: translateX(-15%); }
+  100% { top: -50px; transform: translateX(-5%); }
 }
-
 @keyframes orange-animation {
-  0% {
-    top: -75px;
-    right: 10vw;
-  }
-  50% {
-    top: -30px;
-  }
-  100% {
-    top: -28px;
-    right: -1vw;
-  }
+  0% { top: -75px; right: 10vw; }
+  50% { top: -30px; }
+  100% { top: -28px; right: -1vw; }
 }
-
 @keyframes yellow-orange-animation {
-  0% {
-    top: -200px;
-    transform: translateX(0);
-  }
-  50% {
-    top: -110px;
-    transform: translateX(-15%);
-  }
-  100% {
-    top: -105px;
-    transform: translateX(-5%);
-  }
+  0% { top: -200px; transform: translateX(0); }
+  50% { top: -110px; transform: translateX(-15%); }
+  100% { top: -105px; transform: translateX(-5%); }
 }
-
 @keyframes blue-yellow-animation {
-  0% {
-    top: -200px;
-    transform: scaleX(50%) translateX(0);
-  }
-  25% {
-    top: -110px;
-    transform: scaleX(70%) translateX(-10%);
-  }
-  50% {
-    top: -130px;
-    transform: scaleX(225%) translateX(-5%);
-  }
-  100% {
-    top: -110px;
-    transform: scaleX(225%) translateX(0);
-  }
+  0% { top: -200px; transform: scaleX(50%) translateX(0); }
+  25% { top: -110px; transform: scaleX(70%) translateX(-10%); }
+  50% { top: -130px; transform: scaleX(225%) translateX(-5%); }
+  100% { top: -110px; transform: scaleX(225%) translateX(0); }
 }

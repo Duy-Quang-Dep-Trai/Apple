@@ -90,7 +90,7 @@ export default function FlyoutMenu({
         opacity: open ? 1 : 0,
         transform: open ? "translateY(0px)" : "translateY(-6px)",
         transitionProperty: "height, opacity, transform",
-        transitionDuration: open ? "320ms" : "220ms",
+        transitionDuration: open ? "520ms" : "520ms",
         transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >

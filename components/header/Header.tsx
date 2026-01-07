@@ -16,12 +16,6 @@ import { entertainmentMenu } from "./Menu/Entertainment/menu";
 import { accessoriesMenu } from "./Menu/accessories/menu";
 import { supportMenu } from "./Menu/Support/menu";
 
-/**
- * Header (Apple-like globalnav)
- * - Desktop: hover flyout (only on real hover devices)
- * - Mobile: fullscreen menu overlay + focus trap + iOS-safe scroll lock
- */
-
 type OpenKey =
     | "store"
     | "mac"
@@ -75,19 +69,51 @@ function getFocusable(container: HTMLElement | null) {
     );
 }
 
+function AppleSearchIcon() {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="15"
+            height="44"
+            viewBox="0 0 15 44"
+            aria-hidden="true"
+            className="fill-current"
+        >
+            <path d="M14.298,27.202l-3.87-3.87c0.701-0.929,1.122-2.081,1.122-3.332c0-3.06-2.489-5.55-5.55-5.55c-3.06,0-5.55,2.49-5.55,5.55 c0,3.061,2.49,5.55,5.55,5.55c1.251,0,2.403-0.421,3.332-1.122l3.87,3.87c0.151,0.151,0.35,0.228,0.548,0.228 s0.396-0.076,0.548-0.228C14.601,27.995,14.601,27.505,14.298,27.202z M1.55,20c0-2.454,1.997-4.45,4.45-4.45 c2.454,0,4.45,1.997,4.45,4.45S8.454,24.45,6,24.45C3.546,24.45,1.55,22.454,1.55,20z"></path>
+        </svg>
+    );
+}
+
+function AppleBagIcon() {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="44"
+            viewBox="0 0 14 44"
+            aria-hidden="true"
+            className="fill-current"
+        >
+            <path d="m11.3535 16.0283h-1.0205a3.4229 3.4229 0 0 0 -3.333-2.9648 3.4229 3.4229 0 0 0 -3.333 2.9648h-1.02a2.1184 2.1184 0 0 0 -2.117 2.1162v7.7155a2.1186 2.1186 0 0 0 2.1162 2.1167h8.707a2.1186 2.1186 0 0 0 2.1168-2.1167v-7.7155a2.1184 2.1184 0 0 0 -2.1165-2.1162zm-4.3535-1.8652a2.3169 2.3169 0 0 1 2.2222 1.8652h-4.4444a2.3169 2.3169 0 0 1 2.2222-1.8652zm5.37 11.6969a1.0182 1.0182 0 0 1 -1.0166 1.0171h-8.7069a1.0182 1.0182 0 0 1 -1.0165-1.0171v-7.7155a1.0178 1.0178 0 0 1 1.0166-1.0166h8.707a1.0178 1.0178 0 0 1 1.0164 1.0166z"></path>
+        </svg>
+    );
+}
+
 export default function Header() {
     // Desktop flyout
     const [openKey, setOpenKey] = useState<OpenKey>(null);
     const { cancelClose, scheduleClose } = useHoverIntent();
 
-    // Mobile overlay menu
-    const [mobileOpen, setMobileOpen] = useState(false); // ✅ mặc định đóng
-    const [mobileMounted, setMobileMounted] = useState(false);
+    // “closing” state để animation đóng mượt (giống lúc mở)
+    const [closing, setClosing] = useState(false);
+    const closeTimerRef = useRef<number | null>(null);
 
-    // Timing gần Apple
+    // Mobile overlay menu
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const [mobileMounted, setMobileMounted] = useState(false);
     const MOBILE_ANIM_MS = 240;
 
-    // Hover capability gate: only hover devices
+    // Hover capability gate
     const [canHover, setCanHover] = useState(false);
 
     // Track keyboard vs pointer
@@ -97,21 +123,45 @@ export default function Header() {
     const mobileOverlayRef = useRef<HTMLDivElement | null>(null);
     const restoreFocusRef = useRef<HTMLElement | null>(null);
 
-    const closeDesktopFlyout = useCallback(() => setOpenKey(null), []);
-    const closeMobileMenu = useCallback(() => setMobileOpen(false), []);
-    const closeAll = useCallback(() => {
-        setOpenKey(null);
-        setMobileOpen(false);
+    const clearCloseTimer = useCallback(() => {
+        if (closeTimerRef.current) {
+            window.clearTimeout(closeTimerRef.current);
+            closeTimerRef.current = null;
+        }
     }, []);
 
-    // =========================
-    // 1) Detect "real hover" device
-    //    (hover: hover) and (pointer: fine)
-    // =========================
-    useEffect(() => {
-        // guard SSR
-        if (typeof window === "undefined") return;
+    // ✅ Đóng mượt: giữ FlyoutMenu “open” thêm 1 nhịp để nó animate height/opacity xuống nhẹ nhàng
+    const closeDesktopFlyoutSmooth = useCallback(() => {
+        if (openKey === null) return;
+        clearCloseTimer();
+        setClosing(true);
+        closeTimerRef.current = window.setTimeout(() => {
+            setOpenKey(null);
+            setClosing(false);
+            closeTimerRef.current = null;
+        }, 220); // khớp với FlyoutMenu close duration bạn đang dùng (220ms)
+    }, [openKey, clearCloseTimer]);
 
+    // ✅ Mở lại thì hủy closing ngay lập tức
+    const openDesktopFlyout = useCallback(
+        (key: Exclude<OpenKey, null>) => {
+            clearCloseTimer();
+            setClosing(false);
+            setOpenKey(key);
+        },
+        [clearCloseTimer]
+    );
+
+    const closeMobileMenu = useCallback(() => setMobileOpen(false), []);
+    const closeAll = useCallback(() => {
+        clearCloseTimer();
+        setClosing(false);
+        setOpenKey(null);
+        setMobileOpen(false);
+    }, [clearCloseTimer]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
         const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
         const update = () => setCanHover(mq.matches);
         update();
@@ -125,9 +175,6 @@ export default function Header() {
         }
     }, []);
 
-    // =========================
-    // Track keyboard vs pointer input
-    // =========================
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (
@@ -139,7 +186,6 @@ export default function Header() {
                 lastInputWasKeyboard.current = true;
             }
         };
-
         const onPointerDown = () => {
             lastInputWasKeyboard.current = false;
         };
@@ -153,11 +199,6 @@ export default function Header() {
         };
     }, []);
 
-    // =========================
-    // Mobile mount/unmount
-    // - mount ngay khi mở
-    // - unmount sau khi animation đóng chạy xong
-    // =========================
     useEffect(() => {
         if (mobileOpen) {
             setMobileMounted(true);
@@ -167,15 +208,11 @@ export default function Header() {
         return () => window.clearTimeout(t);
     }, [mobileOpen]);
 
-    // Desktop: open by focus only if keyboard navigation
     const openByFocus = (key: Exclude<OpenKey, null>) => {
         if (!lastInputWasKeyboard.current) return;
-        setOpenKey(key);
+        openDesktopFlyout(key);
     };
 
-    // =========================
-    // Close menus when tab becomes hidden
-    // =========================
     useEffect(() => {
         const handleVisibility = () => {
             if (document.visibilityState === "hidden") closeAll();
@@ -184,9 +221,6 @@ export default function Header() {
         return () => document.removeEventListener("visibilitychange", handleVisibility);
     }, [closeAll]);
 
-    // =========================
-    // ESC closes both desktop flyout and mobile menu
-    // =========================
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") closeAll();
@@ -195,9 +229,7 @@ export default function Header() {
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [closeAll]);
 
-    // =========================
     // iOS-safe scroll lock when mobile menu open
-    // =========================
     useEffect(() => {
         if (!mobileOpen) return;
 
@@ -232,15 +264,12 @@ export default function Header() {
         };
     }, [mobileOpen]);
 
-    // =========================
     // Focus trap + restore focus (mobile)
-    // =========================
     useEffect(() => {
         if (!mobileOpen) return;
 
         restoreFocusRef.current = document.activeElement as HTMLElement | null;
 
-        // focus vào menu item đầu tiên (hoặc overlay)
         const focusables = getFocusable(mobileOverlayRef.current);
         (focusables[0] ?? mobileOverlayRef.current)?.focus?.();
 
@@ -280,6 +309,7 @@ export default function Header() {
         };
     }, [mobileOpen]);
 
+    // Flyout open thực sự khi openKey != null
     const isDesktopFlyoutOpen = openKey !== null;
 
     const activeMenu = useMemo(() => {
@@ -302,75 +332,63 @@ export default function Header() {
     const menuTopPoints = mobileOpen ? "3.5 3.5, 15 15" : "2 5, 16 5";
     const menuBottomPoints = mobileOpen ? "3.5 15, 15 3.5" : "2 12, 16 12";
 
+    // Shared styling (Apple-ish)
+    const barClass =
+        "h-11 bg-[#f5f5f7]/92 dark:bg-[#1d1d1f]/92 backdrop-blur-[18px] supports-[backdrop-filter]:bg-[#f5f5f7]/80 dark:supports-[backdrop-filter]:bg-[#1d1d1f]/80";
+
+    const textClass = "text-[#1d1d1f]/80 dark:text-[#f5f5f7]/80";
+    const hoverTextClass = "hover:text-[#1d1d1f] dark:hover:text-white";
+
+    // “globalnav-content” spec: 1024 width, 22px paddings (content box ~980)
+    const DESKTOP_CONTENT = "mx-auto max-w-[1024px] px-[22px]";
+
+    // ✅ Flyout “đang animate đóng” vẫn coi như open để FlyoutMenu tự animate xuống
+    const flyoutVisible = isDesktopFlyoutOpen || closing;
+
     return (
-        <header className="sticky top-0 z-50 relative">
-            {/* ================= MOBILE HEADER (Apple mobile layout) ================= */}
+        <header id="globalheader" className="sticky top-0 z-[70]">
+            {/* ================= MOBILE ================= */}
             <div className="md:hidden">
-                <div className="bg-[#f5f5f7]/95 dark:bg-[#1d1d1f]/95 backdrop-blur">
-                    <div className="mx-auto h-11 px-4 flex items-center text-[#1d1d1f]/80 dark:text-[#f5f5f7]/80">
-                        {/* LEFT: Logo */}
+                <div className={barClass}>
+                    <div className={`h-11 px-4 flex items-center ${textClass}`}>
                         <Link
                             href="/"
                             aria-label="Apple"
-                            className="flex h-8 w-8 items-center justify-center hover:opacity-80"
+                            className={`flex h-11 w-11 items-center justify-center ${hoverTextClass} hover:opacity-90`}
                             onClick={closeAll}
                         >
-                            <span className="text-xl leading-none"></span>
+                            <span className="text-[20px] leading-none"></span>
                         </Link>
 
-                        {/* RIGHT: Search + Bag + Menu */}
-                        <div className="ml-auto flex items-center gap-3">
-                            {/* Search (same SVG as desktop) */}
+                        <div className="ml-auto flex items-center">
                             <button
                                 aria-label="Tìm kiếm"
-                                className="flex h-8 w-8 items-center justify-center hover:opacity-80"
+                                className={`flex h-11 w-11 items-center justify-center ${hoverTextClass} hover:opacity-90`}
                                 type="button"
                                 onClick={() => {
-                                    closeDesktopFlyout();
-                                    closeMobileMenu();
-                                    // TODO: open search overlay
+                                    closeAll();
                                 }}
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="15"
-                                    height="44"
-                                    viewBox="0 0 15 44"
-                                    className="fill-current"
-                                >
-                                    <path d="M14.298,27.202l-3.87-3.87c0.701-0.929,1.122-2.081,1.122-3.332c0-3.06-2.489-5.55-5.55-5.55c-3.06,0-5.55,2.49-5.55,5.55 c0,3.061,2.49,5.55,5.55,5.55c1.251,0,2.403-0.421,3.332-1.122l3.87,3.87c0.151,0.151,0.35,0.228,0.548,0.228 s0.396-0.076,0.548-0.228C14.601,27.995,14.601,27.505,14.298,27.202z M1.55,20c0-2.454,1.997-4.45,4.45-4.45 c2.454,0,4.45,1.997,4.45,4.45S8.454,24.45,6,24.45C3.546,24.45,1.55,22.454,1.55,20z"></path>
-                                </svg>
+                                <AppleSearchIcon />
                             </button>
 
-                            {/* Bag (same SVG as desktop) */}
                             <button
                                 aria-label="Giỏ hàng"
-                                className="flex h-8 w-8 items-center justify-center hover:opacity-80"
+                                className={`flex h-11 w-11 items-center justify-center ${hoverTextClass} hover:opacity-90`}
                                 type="button"
                                 onClick={() => {
-                                    closeDesktopFlyout();
-                                    closeMobileMenu();
-                                    // TODO: open bag
+                                    closeAll();
                                 }}
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="14"
-                                    height="44"
-                                    viewBox="0 0 14 44"
-                                    className="fill-current"
-                                >
-                                    <path d="m11.3535 16.0283h-1.0205a3.4229 3.4229 0 0 0 -3.333-2.9648 3.4229 3.4229 0 0 0 -3.333 2.9648h-1.02a2.1184 2.1184 0 0 0 -2.117 2.1162v7.7155a2.1186 2.1186 0 0 0 2.1162 2.1167h8.707a2.1186 2.1186 0 0 0 2.1168-2.1167v-7.7155a2.1184 2.1184 0 0 0 -2.1165-2.1162zm-4.3535-1.8652a2.3169 2.3169 0 0 1 2.2222 1.8652h-4.4444a2.3169 2.3169 0 0 1 2.2222-1.8652zm5.37 11.6969a1.0182 1.0182 0 0 1 -1.0166 1.0171h-8.7069a1.0182 1.0182 0 0 1 -1.0165-1.0171v-7.7155a1.0178 1.0178 0 0 1 1.0166-1.0166h8.707a1.0178 1.0178 0 0 1 1.0164 1.0166z"></path>
-                                </svg>
+                                <AppleBagIcon />
                             </button>
 
-                            {/* Menu trigger (Apple-like SVG) */}
                             <button
                                 id="globalnav-menutrigger-button"
-                                className="flex h-8 w-8 items-center justify-center hover:opacity-80"
+                                className={`flex h-11 w-11 items-center justify-center ${hoverTextClass} hover:opacity-90`}
                                 aria-controls="mobile-globalnav-list"
                                 aria-expanded={mobileOpen}
-                                aria-label={mobileOpen ? "Close" : "Menu"}
+                                aria-label={mobileOpen ? "Đóng menu" : "Mở menu"}
                                 type="button"
                                 onClick={() => setMobileOpen((v) => !v)}
                             >
@@ -399,7 +417,6 @@ export default function Header() {
                     </div>
                 </div>
 
-                {/* ================= MOBILE MENU OVERLAY (focus trap inside) ================= */}
                 {mobileMounted && (
                     <div
                         ref={mobileOverlayRef}
@@ -419,19 +436,17 @@ export default function Header() {
                                 : "opacity-0 -translate-y-2 scale-[0.985] pointer-events-none",
                         ].join(" ")}
                     >
-                        {/* top bar */}
-                        <div className="flex h-11 items-center justify-end px-4 border-b border-black/10 dark:border-white/10">
+                        <div className="h-11 px-4 flex items-center justify-end border-b border-black/10 dark:border-white/10">
                             <button
                                 aria-label="Đóng menu"
                                 type="button"
                                 onClick={() => setMobileOpen(false)}
-                                className="flex h-8 w-8 items-center justify-center hover:opacity-80 text-[#1d1d1f] dark:text-[#f5f5f7]"
+                                className="flex h-11 w-11 items-center justify-center text-[#1d1d1f] dark:text-[#f5f5f7] hover:opacity-90"
                             >
                                 <span className="text-[18px] leading-none">✕</span>
                             </button>
                         </div>
 
-                        {/* list */}
                         <nav className="px-6 pt-6" aria-label="Mobile global navigation">
                             <ul
                                 id="mobile-globalnav-list"
@@ -444,137 +459,149 @@ export default function Header() {
                                             "transition-[opacity,transform]",
                                             "duration-[420ms]",
                                             "ease-[cubic-bezier(0.22,0.61,0.36,1)]",
-                                            mobileOpen
-                                                ? "opacity-100 translate-y-0"
-                                                : "opacity-0 -translate-y-2",
+                                            mobileOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2",
                                         ].join(" ")}
                                         style={{
-                                            transitionDelay: mobileOpen
-                                                ? `${index * 40 + 80}ms` // 👈 stagger chuẩn Apple
-                                                : "0ms",
+                                            transitionDelay: mobileOpen ? `${index * 38 + 70}ms` : "0ms",
                                         }}
                                     >
-                                        <Link
-                                            href={item.href}
-                                            onClick={() => setMobileOpen(false)}
-                                            className="block"
-                                        >
+                                        <Link href={item.href} onClick={() => setMobileOpen(false)} className="block">
                                             {item.label}
                                         </Link>
                                     </li>
                                 ))}
-
                             </ul>
                         </nav>
                     </div>
                 )}
             </div>
 
-            {/* ================= DESKTOP HEADER (hover flyout only on real hover devices) ================= */}
+            {/* ================= DESKTOP ================= */}
             <div className="hidden md:block">
                 <div
                     onMouseEnter={() => {
                         if (!canHover) return;
                         cancelClose();
+                        // nếu đang closing mà hover lại, hủy closing
+                        clearCloseTimer();
+                        setClosing(false);
                     }}
                     onMouseLeave={() => {
                         if (!canHover) return;
-                        scheduleClose(closeDesktopFlyout, 120);
+                        // scheduleClose gọi hàm đóng mượt
+                        scheduleClose(closeDesktopFlyoutSmooth, 120);
                     }}
                 >
                     {/* NAV BAR */}
-                    <div className="bg-[#f5f5f7]/95 dark:bg-[#1d1d1f]/95 backdrop-blur">
-                        <div className="mx-auto max-w-[1470px]">
-                            <nav
-                                aria-label="Apple global navigation"
-                                className="mx-auto max-w-[1024px] h-11 flex items-center justify-center
-                text-[13px] text-[#1d1d1f]/80 dark:text-[#f5f5f7]/80"
+                    <div className={barClass}>
+                        <nav aria-label="Apple global navigation" className={`${DESKTOP_CONTENT} h-11 ${textClass}`}>
+                            <ul
+                                id="globalnav-list"
+                                className={[
+                                    "flex h-11 items-stretch justify-between",
+                                    "text-[13px] leading-[44px]",
+                                    "tracking-[-0.01em]",
+                                    "select-none",
+                                ].join(" ")}
                             >
-                                <ul
-                                    id="globalnav-list"
-                                    className="flex h-11 w-full max-w-[996px] items-center justify-between
-                  list-none mx-[-8px] leading-[25px] tracking-[-0.374px]"
-                                >
-                                    {/* Logo  */}
-                                    <li className="flex h-11 w-[30px] items-center justify-center">
-                                        <Link href="/" className="flex h-7 w-7 items-center justify-center hover:opacity-80 cursor-pointer">
-                                            <span className="text-xl leading-none"></span>
-                                        </Link>
-                                    </li>
+                                <li className="flex items-stretch">
+                                    <Link
+                                        href="/"
+                                        aria-label="Apple"
+                                        className={`flex h-11 w-11 items-center justify-center ${hoverTextClass} hover:opacity-90`}
+                                        onMouseEnter={closeDesktopFlyoutSmooth}
+                                        onFocus={closeDesktopFlyoutSmooth}
+                                    >
+                                        <span className="text-[20px] leading-none"></span>
+                                    </Link>
+                                </li>
 
-                                    {/* Menu items */}
-                                    {navItems.map((item) => {
-                                        const dropdown = hasMenu(item);
+                                {navItems.map((item) => {
+                                    const dropdown = hasMenu(item);
+                                    const expanded = dropdown ? openKey === item.menuKey : undefined;
 
-                                        return (
-                                            <li key={item.href} className="flex h-11 items-center justify-center px-2">
-                                                <Link
-                                                    href={item.href}
-                                                    className="relative py-[2px] transition hover:text-[#1d1d1f] dark:hover:text-white hover:translate-y-[1px]"
-                                                    onMouseEnter={() => {
-                                                        if (!canHover) return;
-                                                        dropdown ? setOpenKey(item.menuKey) : closeDesktopFlyout();
-                                                    }}
-                                                    onFocus={() => (dropdown ? openByFocus(item.menuKey) : closeDesktopFlyout())}
-                                                    onClick={closeDesktopFlyout}
-                                                    aria-expanded={dropdown ? openKey === item.menuKey : undefined}
-                                                    aria-controls={dropdown ? `globalnav-submenu-${item.menuKey}` : undefined}
-                                                >
-                                                    {item.label}
-                                                </Link>
-                                            </li>
-                                        );
-                                    })}
+                                    return (
+                                        <li key={item.href} className="flex items-stretch">
+                                            <Link
+                                                href={item.href}
+                                                className={[
+                                                    "flex items-center justify-center",
+                                                    "h-11 px-[10px]",
+                                                    "transition-opacity duration-150",
+                                                    hoverTextClass,
+                                                    "opacity-95 hover:opacity-100",
+                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-black/30 dark:focus-visible:ring-white/30",
+                                                    "focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                                ].join(" ")}
+                                                onMouseEnter={() => {
+                                                    if (!canHover) return;
+                                                    if (dropdown) openDesktopFlyout(item.menuKey);
+                                                    else closeDesktopFlyoutSmooth();
+                                                }}
+                                                onFocus={() => (dropdown ? openByFocus(item.menuKey) : closeDesktopFlyoutSmooth())}
+                                                onClick={closeDesktopFlyoutSmooth}
+                                                aria-haspopup={dropdown ? "menu" : undefined}
+                                                aria-expanded={expanded}
+                                                aria-controls={dropdown ? `globalnav-submenu-${item.menuKey}` : undefined}
+                                            >
+                                                {item.label}
+                                            </Link>
+                                        </li>
+                                    );
+                                })}
 
-                                    {/* Search icon */}
-                                    <li className="flex h-11 w-[30px] items-center justify-center">
-                                        <button
-                                            aria-label="Tìm kiếm"
-                                            className="flex h-7 w-7 items-center justify-center hover:opacity-80"
-                                            onMouseEnter={closeDesktopFlyout}
-                                            onFocus={closeDesktopFlyout}
-                                            type="button"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="44" viewBox="0 0 15 44" className="fill-current">
-                                                <path d="M14.298,27.202l-3.87-3.87c0.701-0.929,1.122-2.081,1.122-3.332c0-3.06-2.489-5.55-5.55-5.55c-3.06,0-5.55,2.49-5.55,5.55 c0,3.061,2.49,5.55,5.55,5.55c1.251,0,2.403-0.421,3.332-1.122l3.87,3.87c0.151,0.151,0.35,0.228,0.548,0.228 s0.396-0.076,0.548-0.228C14.601,27.995,14.601,27.505,14.298,27.202z M1.55,20c0-2.454,1.997-4.45,4.45-4.45 c2.454,0,4.45,1.997,4.45,4.45S8.454,24.45,6,24.45C3.546,24.45,1.55,22.454,1.55,20z"></path>
-                                            </svg>
-                                        </button>
-                                    </li>
+                                <li className="flex items-stretch">
+                                    <button
+                                        aria-label="Tìm kiếm"
+                                        className={`flex h-11 w-11 items-center justify-center ${hoverTextClass} hover:opacity-90`}
+                                        onMouseEnter={closeDesktopFlyoutSmooth}
+                                        onFocus={closeDesktopFlyoutSmooth}
+                                        type="button"
+                                    >
+                                        <AppleSearchIcon />
+                                    </button>
+                                </li>
 
-                                    {/* Bag icon */}
-                                    <li className="flex h-11 w-[30px] items-center justify-center">
-                                        <button
-                                            aria-label="Giỏ hàng"
-                                            className="flex h-7 w-7 items-center justify-center hover:opacity-80"
-                                            onMouseEnter={closeDesktopFlyout}
-                                            onFocus={closeDesktopFlyout}
-                                            type="button"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="44" viewBox="0 0 14 44" className="fill-current">
-                                                <path d="m11.3535 16.0283h-1.0205a3.4229 3.4229 0 0 0 -3.333-2.9648 3.4229 3.4229 0 0 0 -3.333 2.9648h-1.02a2.1184 2.1184 0 0 0 -2.117 2.1162v7.7155a2.1186 2.1186 0 0 0 2.1162 2.1167h8.707a2.1186 2.1186 0 0 0 2.1168-2.1167v-7.7155a2.1184 2.1184 0 0 0 -2.1165-2.1162zm-4.3535-1.8652a2.3169 2.3169 0 0 1 2.2222 1.8652h-4.4444a2.3169 2.3169 0 0 1 2.2222-1.8652zm5.37 11.6969a1.0182 1.0182 0 0 1 -1.0166 1.0171h-8.7069a1.0182 1.0182 0 0 1 -1.0165-1.0171v-7.7155a1.0178 1.0178 0 0 1 1.0166-1.0166h8.707a1.0178 1.0178 0 0 1 1.0164 1.0166z"></path>
-                                            </svg>
-                                        </button>
-                                    </li>
-                                </ul>
-                            </nav>
-                        </div>
+                                <li className="flex items-stretch">
+                                    <button
+                                        aria-label="Giỏ hàng"
+                                        className={`flex h-11 w-11 items-center justify-center ${hoverTextClass} hover:opacity-90`}
+                                        onMouseEnter={closeDesktopFlyoutSmooth}
+                                        onFocus={closeDesktopFlyoutSmooth}
+                                        type="button"
+                                    >
+                                        <AppleBagIcon />
+                                    </button>
+                                </li>
+                            </ul>
+                        </nav>
                     </div>
 
-                    {/* Desktop overlay: click to close flyout */}
-                    {isDesktopFlyoutOpen && (
-                        <button
-                            type="button"
-                            aria-label="Đóng menu"
-                            onClick={closeDesktopFlyout}
-                            className="fixed left-0 right-0 bottom-0 bg-black/10 backdrop-blur-[6px]"
+                    {/* ✅ OVERLAY: z-index thấp hơn flyout, hover vào là đóng */}
+                    {flyoutVisible && (
+                        <div
+                            className="fixed left-0 right-0 bottom-0 z-[60] bg-black/10 backdrop-blur-[6px]"
                             style={{ top: "44px" }}
+                            onMouseEnter={closeDesktopFlyoutSmooth}
+                            onPointerEnter={closeDesktopFlyoutSmooth}
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                closeDesktopFlyoutSmooth();
+                            }}
+                            role="presentation"
+                            aria-hidden="true"
                         />
                     )}
 
-                    {/* Flyout */}
+                    {/* ✅ FLYOUT: đặt vào 1 wrapper fixed để position ổn định + z cao hơn overlay */}
                     {activeMenu && (
-                        <div id={activeId}>
-                            <FlyoutMenu open={isDesktopFlyoutOpen} menu={activeMenu} id={activeId} onNavigate={closeDesktopFlyout} />
+                        <div className="fixed left-0 right-0 z-[70]" style={{ top: "44px" }}>
+                            <FlyoutMenu
+                                open={flyoutVisible} // ✅ đóng/mở đều mượt
+                                menu={activeMenu}
+                                id={activeId}
+                                onNavigate={closeDesktopFlyoutSmooth}
+                            />
                         </div>
                     )}
                 </div>

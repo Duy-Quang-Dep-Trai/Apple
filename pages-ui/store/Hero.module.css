@@ -1,0 +1,9 @@
+.as-l-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1190px;
+  padding-inline: 24px;
+}
+@media (min-width: 1024px) {
+  .as-l-container { padding-inline: 0; }
+}

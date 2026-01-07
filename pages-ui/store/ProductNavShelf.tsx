@@ -26,56 +26,56 @@ export default function ProductNavShelf() {
                 label: "Mac",
                 href: "/mac",
                 imgSrc:
-                    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-13-mac-nav-202510?wid=400&hei=260&fmt=png-alpha",
+                    "https://res.cloudinary.com/df1gg3pig/image/upload/v1766819833/8ce84d14-689d-4f09-8336-1308c73eec2d.png",
             },
             {
                 id: "iphone",
                 label: "iPhone",
                 href: "/iphone",
                 imgSrc:
-                    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-13-iphone-nav-202509?wid=1200&hei=780&fmt=png-alpha",
+                    "https://res.cloudinary.com/df1gg3pig/image/upload/v1766819862/530e7ae4-d948-4465-bc8a-99db2160b9f6.png",
             },
             {
                 id: "ipad",
                 label: "iPad",
                 href: "/ipad",
                 imgSrc:
-                    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-13-ipad-nav-202405?wid=400&hei=260&fmt=png-alpha",
+                    "https://res.cloudinary.com/df1gg3pig/image/upload/v1766819884/a357fccb-9efa-41a7-809a-e9adac1fec48.png",
             },
             {
                 id: "watch",
                 label: "Apple Watch",
                 href: "/watch",
                 imgSrc:
-                    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-13-watch-nav-202509_GEO_VN?wid=400&hei=260&fmt=png-alpha",
+                    "https://res.cloudinary.com/df1gg3pig/image/upload/v1766819932/ee6ee9b2-036e-4bad-a66b-60fc244a909d.png",
             },
             {
                 id: "airpods",
                 label: "AirPods",
                 href: "/airpods",
                 imgSrc:
-                    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-13-airpods-nav-202509?wid=400&hei=260&fmt=png-alpha",
+                    "https://res.cloudinary.com/df1gg3pig/image/upload/v1766819955/78dc99e3-039d-4dca-8052-cd423995e6b5.png",
             },
             {
                 id: "airtag",
                 label: "AirTag",
                 href: "/accessories/airtag",
                 imgSrc:
-                    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-13-airtags-nav-202108?wid=400&hei=260&fmt=png-alpha",
+                    "https://res.cloudinary.com/df1gg3pig/image/upload/v1766819974/664cf408-c9db-4da7-8689-397d35c7c921.png",
             },
             {
                 id: "appletv",
                 label: "Apple TV 4K",
                 href: "/tv-home",
                 imgSrc:
-                    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-13-appletv-nav-202210?wid=400&hei=260&fmt=png-alpha",
+                    "https://res.cloudinary.com/df1gg3pig/image/upload/v1766820134/9b9437ad-0384-40e4-8990-88d1f8767b5a.png",
             },
             {
                 id: "accessories",
                 label: "Phụ Kiện",
                 href: "/accessories",
                 imgSrc:
-                    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-13-accessories-nav-202509?wid=400&hei=260&fmt=png-alpha",
+                    "https://res.cloudinary.com/df1gg3pig/image/upload/v1766820150/0728a43b-e162-42e1-b451-33827329d742.png",
             },
         ],
         []
@@ -167,7 +167,7 @@ export default function ProductNavShelf() {
                         disabled={!canPrev}
                         onClick={() => scrollByAmount(-1)}
                         className={[
-                            "hidden md:flex", // ✅ ẩn trên mobile, hiện từ md
+                            "hidden md:flex", // ẩn trên mobile, hiện từ md
                             "absolute left-[-18px] top-1/2 -translate-y-1/2",
                             "h-10 w-10 items-center justify-center rounded-full",
                             "bg-white/90 backdrop-blur shadow-sm",
@@ -186,7 +186,7 @@ export default function ProductNavShelf() {
                         disabled={!canNext}
                         onClick={() => scrollByAmount(1)}
                         className={[
-                            "hidden md:flex", // ✅ ẩn trên mobile, hiện từ md
+                            "hidden md:flex", // ẩn trên mobile, hiện từ md
                             "absolute right-[-18px] top-1/2 -translate-y-1/2",
                             "h-10 w-10 items-center justify-center rounded-full",
                             "bg-white/90 backdrop-blur shadow-sm",
