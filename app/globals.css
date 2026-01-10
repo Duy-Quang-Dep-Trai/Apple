@@ -3,21 +3,29 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-:root {
-  --globalnav-height: 44px;
-}
-
 
 :root {
-  /* Apple Store container tokens */
   --store-max: 1470px;
-  --store-gutter: max(24px, calc((100vw - var(--store-max)) / 2));
+
+  /* ✅ gutter responsive: iPad/desktop đều đẹp */
+  --store-gutter: clamp(16px, calc((100vw - var(--store-max)) / 2), 64px);
 
   --background: #f5f5f7;
   --foreground: #1d1d1f;
+  --ribbon-background-color: var(--background);
+}
 
-  /* Ribbon tokens */
-  --ribbon-background-color: #f5f5f7;
+
+/* chống tràn ngang do w-screen/100vw trên desktop */
+html,
+body {
+  overflow-x: clip; /* nếu browser cũ: đổi thành hidden */
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 /* 1 container chuẩn: luôn bám gutter */
@@ -43,20 +51,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ✅ Dark mode override: đang comment là đúng (để nền luôn đồng nhất) */
+/* @media (prefers-color-scheme: dark) { ... } */
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-/* ===== Flyout text reveal (giữ nguyên của bạn) ===== */
+/* ===== Flyout text reveal ===== */
 .globalnav-flyout-item {
   opacity: 0;
   transform: translateY(-6px);
@@ -78,11 +76,12 @@ body {
   }
 }
 
-/* ===== Holiday Ribbon (giữ nguyên của bạn) ===== */
+/* ===== Holiday Ribbon ===== */
 .dd-fill-tertiary {
-  background-color: #f5f5f7;
-  --ribbon-background-color: rgb(245, 245, 247);
+  background-color: transparent;
+  --ribbon-background-color: var(--background);
 }
+
 .dd-holiday-202511-header {
   width: 100%;
   height: 88px;
@@ -90,6 +89,13 @@ body {
   overflow: hidden;
   position: relative;
 }
+.dd-holiday-202511-header .dd-container {
+  max-width: var(--store-max);
+  margin: 0 auto;
+  height: 100%;
+  position: relative;
+}
+
 .dd-holiday-202511-header .dd-container {
   max-width: 1470px;
   margin: 0 auto;

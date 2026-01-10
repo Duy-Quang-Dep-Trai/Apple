@@ -3,20 +3,16 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-/**
- * Product navigation shelf (Apple Store–like)
- * - One responsive component (no desktop/mobile split).
- * - Mobile: touch horizontal scroll.
- * - Desktop: paddlenav buttons (prev/next) + smooth scroll.
- * - Images are hotlinked placeholders for interview/demo purposes.
- */
-
 type ProductNavItem = {
     id: string;
     label: string;
     href: string;
     imgSrc: string;
 };
+
+function cn(...classes: Array<string | false | null | undefined>) {
+    return classes.filter(Boolean).join(" ");
+}
 
 export default function ProductNavShelf() {
     const items: readonly ProductNavItem[] = useMemo(
@@ -89,8 +85,9 @@ export default function ProductNavShelf() {
         const el = scrollerRef.current;
         if (!el) return;
         const max = el.scrollWidth - el.clientWidth;
-        setCanPrev(el.scrollLeft > 0);
-        setCanNext(el.scrollLeft < max - 1);
+        const tol = 2;
+        setCanPrev(el.scrollLeft > tol);
+        setCanNext(el.scrollLeft < max - tol);
     };
 
     useEffect(() => {
@@ -119,34 +116,47 @@ export default function ProductNavShelf() {
     };
 
     return (
-        <section className="bg-[#f5f5f7]">
-            {/* Match Store content width */}
-            <div className="mx-auto w-full max-w-[1190px] pb-10">
-                <div className="relative">
+        <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-transparent">
+            <section className="py-10 bg-transparent">
+                {/* container 1190 */}
+                <div className="mx-auto w-full max-w-[1190px] px-4 sm:px-6 lg:px-0" />
+
+                <div className="relative mt-2">
                     <div
                         ref={scrollerRef}
-                        role="list"
+                        role="region"
                         aria-label="Sản Phẩm"
-                        className={[
-                            "overflow-x-auto scroll-smooth",
-                            // hide scrollbar (Apple-like)
-                            "[scrollbar-width:none]",
-                            "[-ms-overflow-style:none]",
-                            "[&::-webkit-scrollbar]:hidden",
-                        ].join(" ")}
+                        className={cn(
+                            "w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]",
+                            "overflow-x-auto scroll-smooth [-webkit-overflow-scrolling:touch]",
+                            "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+                            "[scroll-snap-type:x_mandatory]",
+                            "scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-[max(0px,calc((100vw-1190px)/2))]",
+                            "scroll-pr-4 sm:scroll-pr-6 lg:scroll-pr-[max(0px,calc((100vw-1190px)/2))]"
+                        )}
                     >
-                        <div className="flex gap-6">
+                        <div
+                            role="list"
+                            className={cn(
+                                "flex gap-6",
+                                "px-4 sm:px-6",
+                                "lg:px-[max(0px,calc((100vw-1190px)/2))]"
+                            )}
+                        >
                             {items.map((it) => (
-                                <div key={it.id} role="listitem" className="shrink-0">
+                                <div
+                                    key={it.id}
+                                    role="listitem"
+                                    className="shrink-0 [scroll-snap-align:start]"
+                                >
                                     <Link href={it.href} className="group block w-[120px]">
                                         <div className="flex flex-col items-center">
-                                            <div className="h-[78px] w-[120px]">
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <div className="h-[78px] w-[120px] bg-transparent">
                                                 <img
                                                     src={it.imgSrc}
-                                                    alt=""
+                                                    alt={it.label}
                                                     loading="lazy"
-                                                    className="h-full w-full object-contain"
+                                                    className="h-full w-full object-contain bg-transparent"
                                                 />
                                             </div>
 
@@ -157,27 +167,33 @@ export default function ProductNavShelf() {
                                     </Link>
                                 </div>
                             ))}
+
+                            <div
+                                aria-hidden="true"
+                                className={cn(
+                                    "shrink-0",
+                                    "w-4 sm:w-6",
+                                    "lg:w-[max(0px,calc((100vw-1190px)/2))]"
+                                )}
+                            />
                         </div>
                     </div>
 
-                    {/* Desktop-only paddlenav (Apple-like: arrows mainly for desktop) */}
+                    {/* paddlenav */}
                     <button
                         type="button"
                         aria-label="Trước - Sản Phẩm"
                         disabled={!canPrev}
                         onClick={() => scrollByAmount(-1)}
-                        className={[
-                            "hidden md:flex", // ẩn trên mobile, hiện từ md
-                            "absolute left-[-18px] top-1/2 -translate-y-1/2",
-                            "h-10 w-10 items-center justify-center rounded-full",
-                            "bg-white/90 backdrop-blur shadow-sm",
-                            "transition-opacity",
-                            canPrev ? "opacity-100" : "opacity-0 pointer-events-none",
-                        ].join(" ")}
+                        className={cn(
+                            "hidden md:grid place-items-center rounded-full",
+                            "h-10 w-10 bg-white/90 text-black backdrop-blur shadow-sm",
+                            "transition-opacity duration-200",
+                            "absolute top-1/2 -translate-y-1/2 left-4 lg:left-6",
+                            canPrev ? "opacity-100" : "opacity-0 pointer-events-none"
+                        )}
                     >
-                        <span aria-hidden="true" className="text-[22px] leading-none">
-                            ‹
-                        </span>
+                        <span aria-hidden="true" className="text-[22px] leading-none">‹</span>
                     </button>
 
                     <button
@@ -185,21 +201,20 @@ export default function ProductNavShelf() {
                         aria-label="Tiếp - Sản Phẩm"
                         disabled={!canNext}
                         onClick={() => scrollByAmount(1)}
-                        className={[
-                            "hidden md:flex", // ẩn trên mobile, hiện từ md
-                            "absolute right-[-18px] top-1/2 -translate-y-1/2",
-                            "h-10 w-10 items-center justify-center rounded-full",
-                            "bg-white/90 backdrop-blur shadow-sm",
-                            "transition-opacity",
-                            canNext ? "opacity-100" : "opacity-0 pointer-events-none",
-                        ].join(" ")}
+                        className={cn(
+                            "hidden md:grid place-items-center rounded-full",
+                            "h-10 w-10 bg-white/90 text-black backdrop-blur shadow-sm",
+                            "transition-opacity duration-200",
+                            "absolute top-1/2 -translate-y-1/2 right-4 lg:right-6",
+                            canNext ? "opacity-100" : "opacity-0 pointer-events-none"
+                        )}
                     >
-                        <span aria-hidden="true" className="text-[22px] leading-none">
-                            ›
-                        </span>
+                        <span aria-hidden="true" className="text-[22px] leading-none">›</span>
                     </button>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
     );
+
+
 }

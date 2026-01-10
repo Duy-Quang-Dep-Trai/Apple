@@ -8,11 +8,9 @@ type LatestProductItem = {
     id: string;
     href: string;
     title: string;
-    tagline?: string;
     priceText?: string;
     imageSrc?: string;
     imageAlt?: string;
-    theme?: "dark" | "light";
     badge?: string;
 };
 
@@ -28,100 +26,79 @@ const DEFAULT_ITEMS: LatestProductItem[] = [
         id: "iphone-17-pro",
         href: "/vn/shop/buy-iphone/iphone-17-pro",
         title: "iPhone 17 Pro",
-        tagline: "Pro đỉnh cao.",
+        badge: "Apple Intelligence",
         priceText: "Từ 34.999.000đ",
         imageSrc:
-            "https://res.cloudinary.com/df1gg3pig/image/upload/v1766825034/2e1761d9-5517-4705-8484-11d083879b84.png",
-        imageAlt: "iPhone 17 Pro",
-        theme: "dark",
+            "https://res.cloudinary.com/df1gg3pig/image/upload/v1767865038/479a1eeb-6c20-4546-a38a-b103f64750dc.png",
     },
     {
-        id: "mbp-14",
+        id: "macbook-pro-14-m5",
         href: "/vn/shop/buy-mac/macbook-pro",
-        title: 'MacBook Pro 14"',
-        tagline: "Siêu mạnh mẽ với M5.",
+        title: 'MacBook Pro 14" với M5',
+        badge: "Apple Intelligence",
         priceText: "Từ 41.999.000đ",
         imageSrc:
-            "https://res.cloudinary.com/df1gg3pig/image/upload/v1766825190/ab31a490-d62e-4e8f-a333-1d234ab24dcf.png",
-        imageAlt: "MacBook Pro 14 inch",
-        theme: "dark",
+            "https://res.cloudinary.com/df1gg3pig/image/upload/v1767865053/631bc02f-299b-4714-a729-f00abfb73be7.png",
     },
     {
         id: "ipad-pro",
         href: "/vn/shop/buy-ipad/ipad-pro",
         title: "iPad Pro",
-        tagline: "Mmmmmạnh mẽ.",
+        badge: "Apple Intelligence",
         priceText: "Từ 29.999.000đ",
         imageSrc:
-            "https://res.cloudinary.com/df1gg3pig/image/upload/v1766825226/3fdb4526-c7be-4bd9-afb0-e7bdd5dadad2.png",
-        imageAlt: "iPad Pro",
-        theme: "dark",
+            "https://res.cloudinary.com/df1gg3pig/image/upload/v1767865056/b70f1c39-cce2-4892-9c75-ca79d79d8978.png",
     },
     {
-        id: "watch-s11",
+        id: "apple-watch-series-11",
         href: "/vn/shop/buy-watch/apple-watch",
         title: "Apple Watch Series 11",
-        tagline: "Chiếc Apple Watch cực đỉnh giúp bạn theo dõi sức khỏe.",
         priceText: "Từ 11.499.000đ",
         imageSrc:
-            "https://res.cloudinary.com/df1gg3pig/image/upload/v1766825241/bc61a76c-d425-4f62-bcea-5760d196026d.png",
-        imageAlt: "Apple Watch Series 11",
-        theme: "light",
-    },
-    {
-        id: "iphone-17",
-        href: "/vn/shop/buy-iphone/iphone-17",
-        title: "iPhone 17",
-        tagline: "Đa tài, đa sắc.",
-        priceText: "Từ 24.999.000đ",
-        imageSrc:
-            "https://res.cloudinary.com/df1gg3pig/image/upload/v1766825266/a942ba9a-79e2-4ae4-993c-0bdba7275c66.png",
-        imageAlt: "iPhone 17",
-        theme: "light",
-    },
-    {
-        id: "mba",
-        href: "/vn/shop/buy-mac/macbook-air",
-        title: "MacBook Air",
-        tagline: "Nhẹ mê. Nhanh dễ nể.",
-        priceText: "Từ 26.508.000đ",
-        imageSrc:
-            "https://res.cloudinary.com/df1gg3pig/image/upload/v1766825584/dc938e2b-552d-4894-a1f0-2ce8eac1422b.png",
-        imageAlt: "MacBook Air",
-        theme: "light",
+            "https://res.cloudinary.com/df1gg3pig/image/upload/v1767865077/4a6bd9e6-84cf-42c7-bc36-8139eca1da6a.png",
     },
     {
         id: "iphone-air",
         href: "/vn/shop/buy-iphone/iphone-air",
         title: "iPhone Air",
-        tagline: "iPhone mỏng nhất từng có.",
+        badge: "Apple Intelligence",
         priceText: "Từ 31.999.000đ",
         imageSrc:
-            "https://res.cloudinary.com/df1gg3pig/image/upload/v1766825596/a1604b9d-edd9-47f7-9b0d-3de9884d9e46.png",
-        imageAlt: "iPhone Air",
-        theme: "light",
+            "https://res.cloudinary.com/df1gg3pig/image/upload/v1767865090/5577f9c9-77a7-4a2c-9bbb-702abde331db.png",
     },
     {
-        id: "watch-ultra-3",
+        id: "macbook-air",
+        href: "/vn/shop/buy-mac/macbook-air",
+        title: "MacBook Air",
+        badge: "Apple Intelligence",
+        priceText: "Từ 26.508.000đ",
+        imageSrc:
+            "https://res.cloudinary.com/df1gg3pig/image/upload/v1767865096/b30d22a6-e2c2-45a3-954d-5b3ebbe81f89.png",
+    },
+    {
+        id: "iphone-17",
+        href: "/vn/shop/buy-iphone/iphone-17",
+        title: "iPhone 17",
+        badge: "Apple Intelligence",
+        priceText: "Từ 24.999.000đ",
+        imageSrc:
+            "https://res.cloudinary.com/df1gg3pig/image/upload/v1767865114/71f3553b-065b-4588-bd7b-4cd6aa936f38.png",
+    },
+    {
+        id: "apple-watch-ultra-3",
         href: "/vn/shop/buy-watch/apple-watch-ultra",
         title: "Apple Watch Ultra 3",
-        tagline: "Tay chơi cự phách.",
         priceText: "Từ 23.999.000đ",
         imageSrc:
-            "https://res.cloudinary.com/df1gg3pig/image/upload/v1766825610/d80f0473-0f74-4532-86ef-8c32462bef46.png",
-        imageAlt: "Apple Watch Ultra 3",
-        theme: "dark",
+            "https://res.cloudinary.com/df1gg3pig/image/upload/v1767865123/d02e1452-de60-4321-9711-7eaac8baebc6.png",
     },
     {
-        id: "watch-se-3",
+        id: "apple-watch-se-3",
         href: "/vn/shop/buy-watch/apple-watch-se",
         title: "Apple Watch SE 3",
-        tagline: "Đi cùng. Trò chuyện. Theo sát. Mãi yêu.",
         priceText: "Từ 6.999.000đ",
         imageSrc:
-            "https://res.cloudinary.com/df1gg3pig/image/upload/v1766825627/e57cb919-b81a-47a6-8112-e3c5257b85fd.png",
-        imageAlt: "Apple Watch SE 3",
-        theme: "light",
+            "https://res.cloudinary.com/df1gg3pig/image/upload/v1767865533/e2d2fe8d-88c3-400b-a412-e785f5a2c01e.png",
     },
 ];
 
@@ -168,122 +145,106 @@ export default function LatestProductsShelf({
         };
     }, [measure]);
 
-    // ✅ Apple-like: scroll theo "page" (viewport) thay vì 1 card cố định
-    const scrollByPage = useCallback((dir: -1 | 1) => {
+    const scrollByStep = useCallback((dir: -1 | 1) => {
         const el = scrollerRef.current;
         if (!el) return;
 
-        const firstCard = el.querySelector<HTMLElement>("[data-card]");
-        if (!firstCard) return;
-
-        const cardW = firstCard.offsetWidth;
-        const gap = 18; // nếu bạn dùng gap-[18px]
-        const step = cardW + gap;
-
-        el.scrollBy({ left: dir * step, behavior: "smooth" });
+        const step = 400 + 18;
+        el.scrollTo({ left: el.scrollLeft + dir * step, behavior: "smooth" });
     }, []);
 
+    // hover style
+    const cardHover = cn(
+        "will-change-transform",
+        "transition-transform transition-shadow duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
+        "md:hover:-translate-y-[8px] md:hover:shadow-[0_28px_70px_rgba(0,0,0,0.18)]",
+        "active:-translate-y-[2px]",
+        "motion-reduce:transition-none motion-reduce:transform-none"
+    );
 
     return (
-        <section className={cn("bg-[#f5f5f7] py-10", className)}>
-            {/* ✅ Header giữ theo container 1190 (giống Apple) */}
-            <div className="mx-auto w-full max-w-[1190px] px-4 sm:px-6 lg:px-0">
-                <div className="mb-6">
-                    <h2 className="text-[32px] font-semibold leading-[1.12] tracking-[-0.02em] text-[#1d1d1f]">
-                        {title}{" "}
-                        <span className="font-semibold text-black/55">{subtitle}</span>
-                    </h2>
+        // ❌ bỏ nền xám của shelf, để ăn theo nền trang
+        <div
+            className={cn(
+                "bg-transparent",
+                "w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]",
+                className
+            )}
+        >
+            <section className="py-10">
+                {/* Header container 1190 */}
+                <div className="mx-auto w-full max-w-[1190px] px-4 sm:px-6 lg:px-0">
+                    <div className="mb-6">
+                        <h2 className="text-[32px] font-semibold leading-[1.12] tracking-[-0.02em] text-[#1d1d1f]">
+                            {title} <span className="font-semibold text-black/55">{subtitle}</span>
+                        </h2>
+                    </div>
                 </div>
-            </div>
 
-            {/* ✅ Scroller FULL-BLEED: tràn theo viewport để card "ra/vào 2 bên màn hình" */}
-            <div className="relative">
-                <div
-                    ref={scrollerRef}
-                    role="region"
-                    aria-label={title}
-                    className={cn(
-                        // full-bleed trick
-                        "w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]",
-
-                        // scroll
-                        "overflow-x-auto scroll-smooth",
-                        "overscroll-x-contain",                 // tránh giật overscroll
-                        "touch-pan-x",                          // hint cho browser chỉ pan ngang
-                        "[-webkit-overflow-scrolling:touch]",   // iOS momentum
-                        // hide scrollbar
-                        "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
-
-                        // snap
-                        "[scroll-snap-type:x_proximity] [-webkit-overflow-scrolling:touch]",
-
-                        // ✅ QUAN TRỌNG: scroll-padding = gutter để snap về đúng vị trí dưới header
-                        "[scroll-padding-left:1rem] sm:[scroll-padding-left:1.5rem]",
-                        "[scroll-padding-right:1rem] sm:[scroll-padding-right:1.5rem]",
-                        "lg:[scroll-padding-left:max(0px,calc((100vw-1190px)/2))]",
-                        "lg:[scroll-padding-right:max(0px,calc((100vw-1190px)/2))]"
-                    )}
-                >
-                    {/* ✅ Platter: padding = gutter động để card đầu tiên thẳng hàng với header 1190 */}
+                <div className="relative">
                     <div
-                        role="list"
+                        ref={scrollerRef}
+                        role="region"
                         aria-label={title}
                         className={cn(
-                            "flex gap-[18px] pb-6",
+                            "w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]",
 
-                            // ✅ QUAN TRỌNG: gutter thật sự (nếu thiếu cái này card sẽ dính sát mép)
-                            "px-4 sm:px-6",
-                            "lg:px-[max(0px,calc((100vw-1190px)/2))]"
+                            // ✅ quan trọng: cho phép hover nhô lên không bị cắt
+                            "overflow-x-auto overflow-y-visible",
+
+                            "scroll-smooth [-webkit-overflow-scrolling:touch]",
+                            "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+                            "[scroll-snap-type:x_mandatory]",
+
+                            // ✅ tạo khoảng “đệm” phía trên để card lift không chạm mép
+                            "pt-8 pb-6",
+
+                            "scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-[max(0px,calc((100vw-1190px)/2))]",
+                            "scroll-pr-4 sm:scroll-pr-6 lg:scroll-pr-[max(0px,calc((100vw-1190px)/2))]"
                         )}
                     >
-                        {data.map((item, idx) => {
-                            const dark = item.theme === "dark";
-                            return (
-                                <div
-                                    key={item.id}
-                                    role="listitem"
-                                    className="shrink-0 [scroll-snap-align:start] [scroll-snap-stop:always]"
-                                >
+                        <div
+                            role="list"
+                            aria-label={title}
+                            className={cn(
+                                "flex gap-[18px]",
+                                "px-4 sm:px-6",
+                                "lg:px-[max(0px,calc((100vw-1190px)/2))]"
+                            )}
+                        >
+                            {data.map((item, idx) => (
+                                <div key={item.id} role="listitem" className="shrink-0 [scroll-snap-align:start]">
                                     <Link
                                         href={item.href}
                                         className={cn(
-                                            "relative block overflow-hidden rounded-[18px]",
-                                            "shadow-[0_18px_40px_rgba(0,0,0,0.12)]",
-                                            // card size
+                                            "group relative block overflow-hidden rounded-[18px] bg-white",
+                                            "shadow-[0_18px_40px_rgba(0,0,0,0.10)]",
                                             "h-[500px] w-[400px]",
-                                            // mobile sizing
                                             "max-[520px]:h-[112vw] max-[520px]:w-[86vw] max-[520px]:max-h-[520px]",
-                                            dark ? "bg-black text-white" : "bg-white text-[#1d1d1f]"
+                                            cardHover
                                         )}
                                     >
-                                        {/* content */}
-                                        <div className="relative z-[2] p-[28px] max-w-[340px]">
-                                            <div className="text-[28px] font-semibold leading-[1.12] tracking-[-0.02em]">
+                                        <div className="relative z-[2] p-[28px]">
+                                            <div className="text-[24px] font-semibold leading-[1.12] tracking-[-0.02em] text-[#1d1d1f]">
                                                 {item.title}
                                             </div>
 
                                             {item.badge ? (
-                                                <div className="mt-2 text-[14px] font-medium text-[#bf4800]">
-                                                    {item.badge}
-                                                </div>
-                                            ) : null}
-
-                                            {item.tagline ? (
-                                                <div className="mt-2 text-[17px] leading-[1.25] opacity-90">
-                                                    {item.tagline}
+                                                <div className="mt-[10px] text-[14px] font-semibold leading-[1.2] tracking-[-0.01em]">
+                                                    <span className="bg-gradient-to-r from-[#0071e3] via-[#6e56cf] to-[#d63384] bg-clip-text text-transparent">
+                                                        {item.badge}
+                                                    </span>
                                                 </div>
                                             ) : null}
 
                                             {item.priceText ? (
-                                                <div className="mt-2 text-[14px] leading-[1.25] opacity-75">
+                                                <div className="mt-[8px] text-[14px] leading-[1.25] tracking-[-0.01em] text-black/70">
                                                     {item.priceText}
                                                 </div>
                                             ) : null}
                                         </div>
 
-                                        {/* image */}
                                         <div className="absolute inset-0">
-                                            {/* giữ khoảng thở trên cho text */}
                                             <div className="absolute inset-x-0 top-0 h-[170px]" />
 
                                             {item.imageSrc ? (
@@ -293,73 +254,75 @@ export default function LatestProductsShelf({
                                                         alt={item.imageAlt ?? item.title}
                                                         fill
                                                         sizes="(max-width: 520px) 86vw, 400px"
-                                                        className={cn(
-                                                            "object-contain object-bottom",
-                                                            "scale-[1.08] translate-y-[1px]"
-                                                        )}
+                                                        className="object-contain object-bottom"
                                                         priority={idx === 0}
                                                     />
                                                 </div>
                                             ) : null}
 
-                                            {/* subtle overlay */}
                                             <div
                                                 className={cn(
                                                     "pointer-events-none absolute inset-0",
-                                                    dark
-                                                        ? "bg-[radial-gradient(1200px_520px_at_20%_10%,rgba(255,255,255,0.06),transparent_55%)]"
-                                                        : "bg-[radial-gradient(1200px_520px_at_20%_10%,rgba(0,0,0,0.04),transparent_55%)]"
+                                                    "bg-[radial-gradient(1000px_520px_at_20%_10%,rgba(0,0,0,0.05),transparent_60%)]",
+                                                    "transition-opacity duration-300",
+                                                    "md:group-hover:opacity-90"
                                                 )}
                                             />
                                         </div>
                                     </Link>
                                 </div>
-                            );
-                        })}
-                        {/* ✅ END SPACER: tạo khoảng trống cuối giống Apple */}
-                        <div aria-hidden="true" className="shrink-0 w-4 sm:w-6 lg:w-[max(0px,calc((100vw-1190px)/2))]" />
+                            ))}
 
+                            {/* End spacer */}
+                            <div
+                                aria-hidden="true"
+                                className={cn(
+                                    "shrink-0",
+                                    "w-4 sm:w-6",
+                                    "lg:w-[max(0px,calc((100vw-1190px)/2))]"
+                                )}
+                            />
+                        </div>
                     </div>
+
+                    {/* Paddlenav */}
+                    <button
+                        type="button"
+                        aria-label={`Trước - ${title}`}
+                        onClick={() => scrollByStep(-1)}
+                        disabled={!canPrev}
+                        className={cn(
+                            "hidden md:grid place-items-center rounded-full",
+                            "h-12 w-12 bg-black/10 text-black backdrop-blur-[8px]",
+                            "transition-opacity duration-200",
+                            "absolute top-1/2 -translate-y-1/2 left-4 lg:left-6",
+                            canPrev ? "opacity-100" : "opacity-0 pointer-events-none"
+                        )}
+                    >
+                        <span aria-hidden="true" className="text-[28px] leading-none">
+                            ‹
+                        </span>
+                    </button>
+
+                    <button
+                        type="button"
+                        aria-label={`Tiếp - ${title}`}
+                        onClick={() => scrollByStep(1)}
+                        disabled={!canNext}
+                        className={cn(
+                            "hidden md:grid place-items-center rounded-full",
+                            "h-12 w-12 bg-black/10 text-black backdrop-blur-[8px]",
+                            "transition-opacity duration-200",
+                            "absolute top-1/2 -translate-y-1/2 right-4 lg:right-6",
+                            canNext ? "opacity-100" : "opacity-0 pointer-events-none"
+                        )}
+                    >
+                        <span aria-hidden="true" className="text-[28px] leading-none">
+                            ›
+                        </span>
+                    </button>
                 </div>
-
-                {/* ✅ Paddlenav (giống Apple: bám theo viewport) */}
-                <button
-                    type="button"
-                    aria-label={`Trước - ${title}`}
-                    onClick={() => scrollByPage(-1)}
-                    disabled={!canPrev}
-                    className={cn(
-                        "hidden md:grid place-items-center rounded-full",
-                        "h-12 w-12 bg-black/10 text-black backdrop-blur-[8px]",
-                        "transition-opacity duration-200",
-                        "absolute top-1/2 -translate-y-1/2 left-4 lg:left-6",
-                        canPrev ? "opacity-100" : "opacity-0 pointer-events-none"
-                    )}
-                >
-                    <span aria-hidden="true" className="text-[28px] leading-none">
-                        ‹
-                    </span>
-                </button>
-
-                <button
-                    type="button"
-                    aria-label={`Tiếp - ${title}`}
-                    onClick={() => scrollByPage(1)}
-                    disabled={!canNext}
-                    className={cn(
-                        "hidden md:grid place-items-center rounded-full",
-                        "h-12 w-12 bg-black/10 text-black backdrop-blur-[8px]",
-                        "transition-opacity duration-200",
-                        "absolute top-1/2 -translate-y-1/2 right-4 lg:right-6",
-                        canNext ? "opacity-100" : "opacity-0 pointer-events-none"
-                    )}
-                >
-                    <span aria-hidden="true" className="text-[28px] leading-none">
-                        ›
-                    </span>
-                </button>
-            </div>
-        </section>
+            </section>
+        </div>
     );
-
 }

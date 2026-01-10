@@ -6,10 +6,9 @@ export default function StorePage() {
     return (
         <>
             <StoreRibbon />
-            <div className="store-container">
-                <StoreHome />
-
-            </div>
+            {/* <div className="store-container"> */}
+            <StoreHome />
+            {/* </div> */}
         </>
     );
 }

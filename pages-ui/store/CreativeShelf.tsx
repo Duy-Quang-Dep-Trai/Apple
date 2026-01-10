@@ -41,10 +41,21 @@ function cn(...classes: Array<string | false | null | undefined>) {
     return classes.filter(Boolean).join(" ");
 }
 
-/**
- * ✅ Swatches chuyển sang hex để render dot như Apple.
- * ✅ Bạn vẫn dùng imageSrc Cloudinary của bạn bình thường.
- */
+/* =========================
+   HOVER PRESET — MATCH LatestProductsShelf (Y CHANG)
+   ========================= */
+const cardHover = cn(
+    "group",
+    "will-change-transform",
+    "transition-transform transition-shadow duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
+    "md:hover:-translate-y-[8px] md:hover:shadow-[0_28px_70px_rgba(0,0,0,0.18)]",
+    "active:-translate-y-[2px]",
+    "motion-reduce:transition-none motion-reduce:transform-none"
+);
+
+/* =========================
+   DEMO DATA (GIỮ NGUYÊN)
+   ========================= */
 export const DEFAULT_ITEMS: ShelfItem[] = [
     {
         type: "hero",
@@ -55,7 +66,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
             "https://res.cloudinary.com/df1gg3pig/image/upload/v1767788613/a0b4960e-b894-43b1-bac6-c6b84191e8c1.png",
         imageAlt: "Thắp lửa khát vọng",
     },
-
     {
         type: "product",
         id: "ipad-air-11",
@@ -71,7 +81,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
             { name: "Ánh Sao", hex: "#E8DFD2" },
         ],
     },
-
     {
         type: "product",
         id: "apple-pencil-pro",
@@ -82,7 +91,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
             "https://res.cloudinary.com/df1gg3pig/image/upload/v1767788635/4b96d29f-e471-4922-9344-950595fa7869.png",
         violator: "Khắc Miễn Phí",
     },
-
     {
         type: "product",
         id: "airpods-max-orange",
@@ -100,7 +108,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
             { name: "Cam", hex: "#F08A2B" },
         ],
     },
-
     {
         type: "product",
         id: "smart-folio-ipad-air-11",
@@ -116,7 +123,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
             { name: "Tím Nhạt", hex: "#C9B7F2" },
         ],
     },
-
     {
         type: "product",
         id: "magic-keyboard-ipad-air-11",
@@ -131,7 +137,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
             { name: "Đen", hex: "#1D1D1F" },
         ],
     },
-
     {
         type: "product",
         id: "smart-folio-ipad-a16",
@@ -142,12 +147,11 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
             "https://res.cloudinary.com/df1gg3pig/image/upload/v1767788661/4652706d-7656-451a-9af0-90661090f6ec.png",
         swatches: [
             { name: "Màu Trời", hex: "#5EA7D8" },
-            { name: "Trắng", hex: "#F5F5F7" },
+            { name: "Trắng", hex: "#F5F5F5" },
             { name: "Dưa Hấu", hex: "#E64664" },
             { name: "Vàng Chanh", hex: "#F4D24A" },
         ],
     },
-
     {
         type: "product",
         id: "magic-keyboard-ipad-pro-13",
@@ -161,7 +165,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
             { name: "Đen", hex: "#1D1D1F" },
         ],
     },
-
     {
         type: "product",
         id: "magic-mouse-usbc",
@@ -175,7 +178,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
             { name: "Đen", hex: "#1D1D1F" },
         ],
     },
-
     {
         type: "product",
         id: "magic-keyboard-touch-id",
@@ -189,7 +191,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
             { name: "Phím Đen", hex: "#1D1D1F" },
         ],
     },
-
     {
         type: "product",
         id: "magic-trackpad-usbc",
@@ -222,186 +223,144 @@ export default function CreativeShelf({
         if (!el) return;
         const max = el.scrollWidth - el.clientWidth;
         const x = el.scrollLeft;
-        const tol = 2;
-        setCanPrev(x > tol);
-        setCanNext(x < max - tol);
+        setCanPrev(x > 2);
+        setCanNext(x < max - 2);
     }, []);
 
     useEffect(() => {
         measure();
         const el = scrollerRef.current;
         if (!el) return;
-
-        const onScroll = () => measure();
-        const onResize = () => measure();
-
-        el.addEventListener("scroll", onScroll, { passive: true });
-        window.addEventListener("resize", onResize);
-
+        el.addEventListener("scroll", measure, { passive: true });
+        window.addEventListener("resize", measure);
         return () => {
-            el.removeEventListener("scroll", onScroll);
-            window.removeEventListener("resize", onResize);
+            el.removeEventListener("scroll", measure);
+            window.removeEventListener("resize", measure);
         };
     }, [measure]);
 
-    const scrollByStep = useCallback((dir: -1 | 1) => {
+    const scrollByStep = (dir: -1 | 1) => {
         const el = scrollerRef.current;
         if (!el) return;
-
-        // step = (card width + gap)
-        const step = 320 + 20;
-        el.scrollTo({ left: el.scrollLeft + dir * step, behavior: "smooth" });
-    }, []);
+        el.scrollBy({ left: dir * 340, behavior: "smooth" });
+    };
 
     return (
-        <section className={cn("bg-[#f5f5f7] py-10", className)}>
-            {/* Header container 1190 */}
-            <div className="mx-auto w-full max-w-[1190px] px-4 sm:px-6 lg:px-0">
-                <div className="mb-6">
-                    <h2 className="text-[32px] font-semibold leading-[1.12] tracking-[-0.02em] text-[#1d1d1f]">
+        <div
+            className={cn(
+                "bg-[#f5f5f7]",
+                "w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]",
+                className
+            )}
+        >
+            <section className="py-10">
+                <div className="mx-auto max-w-[1190px] px-4 sm:px-6 lg:px-0 mb-6">
+                    <h2 className="text-[32px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
                         <span className="text-[#b36b00]">{title}</span>{" "}
-                        <span className="font-semibold text-black/55">{subtitle}</span>
+                        <span className="text-black/55">{subtitle}</span>
                     </h2>
                 </div>
-            </div>
 
-            {/* Full-bleed scroller */}
-            <div className="relative">
-                <div
-                    ref={scrollerRef}
-                    role="region"
-                    aria-label={title}
-                    className={cn(
-                        "w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]",
-                        "overflow-x-auto scroll-smooth [-webkit-overflow-scrolling:touch]",
-                        "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
-                        "[scroll-snap-type:x_mandatory]",
-                        // snap offset để khi kéo về đầu, card nằm đúng dưới text header
-                        "scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-[max(0px,calc((100vw-1190px)/2))]",
-                        "scroll-pr-4 sm:scroll-pr-6 lg:scroll-pr-[max(0px,calc((100vw-1190px)/2))]"
-                    )}
-                >
+                <div className="relative">
                     <div
-                        role="list"
+                        ref={scrollerRef}
                         className={cn(
-                            "flex gap-5 pb-6",
-                            "px-4 sm:px-6",
-                            "lg:px-[max(0px,calc((100vw-1190px)/2))]"
+                            "w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]",
+
+                            // ✅ quan trọng: cho phép hover nhô lên không bị cắt
+                            "overflow-x-auto overflow-y-visible",
+
+                            "scroll-smooth [-webkit-overflow-scrolling:touch]",
+                            "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+
+                            // ✅ tạo khoảng “đệm” phía trên để card lift không chạm mép
+                            "pt-8 pb-6",
+
+                            "scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-[max(0px,calc((100vw-1190px)/2))]"
                         )}
                     >
-                        {data.map((item, idx) => {
-                            if (item.type === "hero") {
-                                return (
-                                    <div
-                                        key={item.id}
-                                        role="listitem"
-                                        className="shrink-0 [scroll-snap-align:start]"
-                                    >
-                                        <Link
-                                            href={item.href}
-                                            target={item.openNewTab ? "_blank" : undefined}
-                                            rel={item.openNewTab ? "noopener noreferrer" : undefined}
-                                            className={cn(
-                                                "relative block overflow-hidden rounded-[18px] bg-white",
-                                                "shadow-[0_18px_40px_rgba(0,0,0,0.10)]",
-                                                "h-[500px] w-[400px]",
-                                                "max-[520px]:h-[112vw] max-[520px]:w-[86vw] max-[520px]:max-h-[520px]"
-                                            )}
-                                        >
-                                            <div className="relative z-[2] p-7">
-                                                <div className="text-[28px] font-semibold leading-[1.12] tracking-[-0.02em] text-[#1d1d1f]">
-                                                    {item.title}
-                                                </div>
-                                            </div>
-
-                                            <div className="absolute inset-0">
-                                                <Image
-                                                    src={item.imageSrc}
-                                                    alt={item.imageAlt ?? item.title}
-                                                    fill
-                                                    sizes="(max-width: 520px) 86vw, 400px"
-                                                    className="object-cover"
-                                                    priority={idx === 0}
-                                                />
-                                                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1000px_520px_at_20%_10%,rgba(0,0,0,0.05),transparent_60%)]" />
-                                            </div>
-                                        </Link>
-                                    </div>
-                                );
-                            }
-
-                            // ✅ PRODUCT (dots always aligned across cards)
-                            return (
-                                <div
-                                    key={item.id}
-                                    role="listitem"
-                                    className="shrink-0 [scroll-snap-align:start]"
-                                >
+                        <div className="flex gap-5 px-4 sm:px-6 lg:px-[max(0px,calc((100vw-1190px)/2))]">
+                            {data.map((item, idx) =>
+                                item.type === "hero" ? (
                                     <Link
+                                        key={item.id}
+                                        href={item.href}
+                                        target={item.openNewTab ? "_blank" : undefined}
+                                        rel={item.openNewTab ? "noopener noreferrer" : undefined}
+                                        className={cn(
+                                            "relative shrink-0 overflow-hidden rounded-[18px] bg-white",
+                                            "shadow-[0_18px_40px_rgba(0,0,0,0.10)]",
+                                            cardHover,
+                                            "h-[500px] w-[400px]"
+                                        )}
+                                    >
+                                        <div className="relative z-10 p-7">
+                                            <div className="text-[28px] font-semibold text-[#1d1d1f]">
+                                                {item.title}
+                                            </div>
+                                        </div>
+
+                                        <Image
+                                            src={item.imageSrc}
+                                            alt={item.imageAlt ?? item.title}
+                                            fill
+                                            sizes="400px"
+                                            className={cn(
+                                                "object-cover",
+                                                "transition-transform duration-300",
+                                                // ✅ nhẹ thôi, không scale card (card đã lift)
+                                                "md:group-hover:scale-[1.02]"
+                                            )}
+                                            priority={idx === 0}
+                                        />
+                                    </Link>
+                                ) : (
+                                    <Link
+                                        key={item.id}
                                         href={item.href}
                                         className={cn(
-                                            "block rounded-[18px] bg-white",
+                                            "shrink-0 rounded-[18px] bg-white",
                                             "shadow-[0_18px_40px_rgba(0,0,0,0.10)]",
-                                            "w-[320px] h-[500px]",
-                                            "max-[520px]:w-[74vw] max-[520px]:h-[112vw] max-[520px]:max-h-[520px]"
+                                            cardHover,
+                                            "w-[320px] h-[500px]"
                                         )}
                                     >
                                         <div className="h-full p-7 flex flex-col">
-                                            {/* ✅ MEDIA fixed height (Apple-like) */}
-                                            {/* ✅ MEDIA: tách riêng vùng ảnh + vùng swatches để không bao giờ sát nhau */}
                                             <div className="relative h-[290px]">
-                                                {/* Image zone: chừa chỗ phía dưới cho swatches */}
-                                                <div className="absolute inset-x-0 top-0 bottom-[44px] flex items-center justify-center pt-6">
+                                                <div className="absolute inset-x-0 top-0 bottom-[52px] flex items-center justify-center">
                                                     {item.imageSrc ? (
-                                                        <div className="relative h-[220px] w-[220px]">
-                                                            <Image
-                                                                src={item.imageSrc}
-                                                                alt={item.imageAlt ?? item.title}
-                                                                fill
-                                                                sizes="220px"
-                                                                className="object-contain"
-                                                            />
-                                                        </div>
+                                                        <Image
+                                                            src={item.imageSrc}
+                                                            alt={item.imageAlt ?? item.title}
+                                                            width={220}
+                                                            height={220}
+                                                            className={cn(
+                                                                "object-contain",
+                                                                "transition-transform duration-300",
+                                                                "md:group-hover:scale-[1.05]"
+                                                            )}
+                                                        />
                                                     ) : (
                                                         <div className="h-[220px] w-[220px] rounded-[14px] bg-black/5" />
                                                     )}
                                                 </div>
 
-                                                {/* Swatch lane: luôn nằm cùng 1 hàng và cách ảnh một khoảng cố định */}
-                                                {item.swatches?.length ? (
-                                                    <div className="absolute inset-x-0 bottom-0 h-[44px] flex items-center justify-center">
-                                                        <ul
-                                                            role="list"
-                                                            aria-label={`${item.title} Các màu có sẵn:`}
-                                                            className="flex h-[16px] items-center gap-[10px]"
-                                                        >
-                                                            {item.swatches.slice(0, 6).map((s) => (
-                                                                <li
-                                                                    key={s.name}
-                                                                    title={s.name}
-                                                                    className="flex h-[16px] w-[16px] items-center justify-center"
-                                                                >
-                                                                    <span
-                                                                        className="block h-[10px] w-[10px] rounded-full ring-1 ring-black/10"
-                                                                        style={{ backgroundColor: s.hex }}
-                                                                    />
-                                                                </li>
-                                                            ))}
-                                                            {item.swatches.length > 6 ? (
-                                                                <li className="flex h-[16px] w-[16px] items-center justify-center">
-                                                                    <span className="text-[14px] leading-none text-black/50">+</span>
-                                                                </li>
-                                                            ) : null}
-                                                        </ul>
-                                                    </div>
-                                                ) : null}
+                                                <div className="absolute inset-x-0 bottom-0 h-[52px] flex justify-center items-center gap-2">
+                                                    {item.swatches?.map((s) => (
+                                                        <span
+                                                            key={s.name}
+                                                            title={s.name}
+                                                            className="h-[10px] w-[10px] rounded-full ring-1 ring-black/10"
+                                                            style={{ backgroundColor: s.hex }}
+                                                        />
+                                                    ))}
+                                                </div>
                                             </div>
 
-
-                                            {/* ✅ INFO stable heights so layout doesn't shift */}
+                                            {/* Violator (giữ layout đồng đều) */}
                                             {item.violator ? (
                                                 <div className="mt-3">
-                                                    <span className="inline-flex rounded-full bg-black/5 px-2 py-1 text-[12px] font-medium text-[#bf4800]">
+                                                    <span className="inline-flex rounded-full bg-black/5 px-2 py-1 text-[12px] font-medium text-black/70">
                                                         {item.violator}
                                                     </span>
                                                 </div>
@@ -409,74 +368,64 @@ export default function CreativeShelf({
                                                 <div className="mt-3 h-[24px]" />
                                             )}
 
-                                            <div className="mt-3">
-                                                <div className="text-[17px] font-semibold leading-[1.2] text-[#1d1d1f] line-clamp-2 min-h-[42px]">
-                                                    {item.title}
-                                                </div>
-
-                                                {item.priceText ? (
-                                                    <div className="mt-2 text-[14px] leading-[1.25] text-black/70 line-clamp-2 min-h-[36px]">
-                                                        {item.priceText}
-                                                    </div>
-                                                ) : (
-                                                    <div className="mt-2 h-[36px]" />
-                                                )}
+                                            <div className="mt-3 text-[17px] font-semibold text-[#1d1d1f] line-clamp-2 min-h-[42px]">
+                                                {item.title}
+                                            </div>
+                                            <div className="mt-2 text-[14px] text-black/70 line-clamp-2 min-h-[36px]">
+                                                {item.priceText}
                                             </div>
                                         </div>
                                     </Link>
-                                </div>
-                            );
-                        })}
-
-                        {/* ✅ end padding like Apple */}
-                        <div
-                            aria-hidden="true"
-                            className={cn(
-                                "shrink-0",
-                                "w-4 sm:w-6",
-                                "lg:w-[max(0px,calc((100vw-1190px)/2))]"
+                                )
                             )}
-                        />
+
+                            {/* ✅ END SPACER — Apple-style trailing space */}
+                            <div
+                                aria-hidden="true"
+                                className={cn(
+                                    "shrink-0",
+                                    "w-4 sm:w-6",
+                                    "lg:w-[max(0px,calc((100vw-1190px)/2))]"
+                                )}
+                            />
+                        </div>
                     </div>
+
+                    <button
+                        type="button"
+                        aria-label={`Trước - ${title}`}
+                        onClick={() => scrollByStep(-1)}
+                        className={cn(
+                            "hidden md:grid place-items-center rounded-full",
+                            "absolute left-4 top-1/2 -translate-y-1/2",
+                            "h-12 w-12 bg-black/10 text-black backdrop-blur-[8px]",
+                            "transition-opacity duration-200",
+                            canPrev ? "opacity-100" : "opacity-0 pointer-events-none"
+                        )}
+                    >
+                        <span aria-hidden="true" className="text-[28px] leading-none">
+                            ‹
+                        </span>
+                    </button>
+
+                    <button
+                        type="button"
+                        aria-label={`Tiếp - ${title}`}
+                        onClick={() => scrollByStep(1)}
+                        className={cn(
+                            "hidden md:grid place-items-center rounded-full",
+                            "absolute right-4 top-1/2 -translate-y-1/2",
+                            "h-12 w-12 bg-black/10 text-black backdrop-blur-[8px]",
+                            "transition-opacity duration-200",
+                            canNext ? "opacity-100" : "opacity-0 pointer-events-none"
+                        )}
+                    >
+                        <span aria-hidden="true" className="text-[28px] leading-none">
+                            ›
+                        </span>
+                    </button>
                 </div>
-
-                {/* Paddlenav */}
-                <button
-                    type="button"
-                    aria-label={`Trước - ${title}`}
-                    onClick={() => scrollByStep(-1)}
-                    disabled={!canPrev}
-                    className={cn(
-                        "hidden md:grid place-items-center rounded-full",
-                        "h-12 w-12 bg-black/10 text-black backdrop-blur-[8px]",
-                        "transition-opacity duration-200",
-                        "absolute top-1/2 -translate-y-1/2 left-4 lg:left-6",
-                        canPrev ? "opacity-100" : "opacity-0 pointer-events-none"
-                    )}
-                >
-                    <span aria-hidden="true" className="text-[28px] leading-none">
-                        ‹
-                    </span>
-                </button>
-
-                <button
-                    type="button"
-                    aria-label={`Tiếp - ${title}`}
-                    onClick={() => scrollByStep(1)}
-                    disabled={!canNext}
-                    className={cn(
-                        "hidden md:grid place-items-center rounded-full",
-                        "h-12 w-12 bg-black/10 text-black backdrop-blur-[8px]",
-                        "transition-opacity duration-200",
-                        "absolute top-1/2 -translate-y-1/2 right-4 lg:right-6",
-                        canNext ? "opacity-100" : "opacity-0 pointer-events-none"
-                    )}
-                >
-                    <span aria-hidden="true" className="text-[28px] leading-none">
-                        ›
-                    </span>
-                </button>
-            </div>
-        </section>
+            </section>
+        </div>
     );
 }
