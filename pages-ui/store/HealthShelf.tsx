@@ -42,9 +42,6 @@ function cn(...classes: Array<string | false | null | undefined>) {
     return classes.filter(Boolean).join(" ");
 }
 
-/* =========================
-   HOVER PRESET — MATCH LatestProductsShelf (Y CHANG)
-   ========================= */
 const cardHover = cn(
     "group",
     "will-change-transform",
@@ -54,12 +51,18 @@ const cardHover = cn(
     "motion-reduce:transition-none motion-reduce:transform-none"
 );
 
-/**
- * ✅ Swatches chuyển sang hex để render dot như Apple.
- * ✅ Bạn vẫn dùng imageSrc Cloudinary của bạn bình thường.
- */
+// ✅ helper: nếu ảnh từ Apple CDN thì bỏ optimize để tránh upstream 404 trên Vercel
+function shouldUnoptimize(src?: string) {
+    if (!src) return false;
+    try {
+        const u = new URL(src);
+        return u.hostname === "store.storeimages.cdn-apple.com";
+    } catch {
+        return false;
+    }
+}
+
 export const DEFAULT_ITEMS: ShelfItem[] = [
-    // HERO (rf-ccard-40)
     {
         type: "hero",
         id: "health-hero",
@@ -72,7 +75,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
         openNewTab: true,
     },
 
-    // 1) Apple Watch Ultra 3 (Mới)
     {
         type: "product",
         id: "apple-watch-ultra-3",
@@ -84,7 +86,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
         violator: "Mới",
     },
 
-    // 2) Nike Sport Band - Hồng Hoàng Hôn
     {
         type: "product",
         id: "nike-sport-band-mgc64",
@@ -96,7 +97,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
         openNewTab: true,
     },
 
-    // 3) Powerbeats Pro 2 - Cam Nóng Bỏng
     {
         type: "product",
         id: "powerbeats-pro-2-mx743",
@@ -108,20 +108,17 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
         openNewTab: true,
     },
 
-    // 4) Beats Pill - Vàng Champagne
     {
         type: "product",
         id: "beats-pill-mw463",
         href: "https://www.apple.com/vn/shop/product/mw463zp/a/beats-pill-loa-bluetooth-kh%C3%B4ng-d%C3%A2y-v%C3%A0ng-champagne",
         title: "Beats Pill – Loa Bluetooth® Không Dây – Vàng Champagne",
         priceText: "4.220.000đ",
-        // ảnh trong HTML của bạn đang không hiện (div rỗng), dùng pattern theo part number:
         imageSrc:
             "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/MW463?wid=400&hei=400&fmt=jpeg&qlt=90",
         openNewTab: true,
     },
 
-    // 5) Beats Flex - Vàng Xương Rồng
     {
         type: "product",
         id: "beats-flex-mymd2",
@@ -133,7 +130,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
         openNewTab: true,
     },
 
-    // 6) AirPods 4 ANC (Khắc Miễn Phí)
     {
         type: "product",
         id: "airpods-4-anc-mxp93",
@@ -146,7 +142,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
         openNewTab: true,
     },
 
-    // 7) Dây Quấn Milan - Gold
     {
         type: "product",
         id: "milanese-loop-gold-mgj54",
@@ -154,11 +149,10 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
         title: "Dây Quấn Milan Màu Gold 46mm - M/L",
         priceText: "2.999.000đ",
         imageSrc:
-            "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/MGJ54?wid=400&hei=400&fmt=jpeg&qlt=90",
+            "https://res.cloudinary.com/df1gg3pig/image/upload/v1767807520/38db42ea-2e45-449a-9fb9-b2eab2db8ac9.png",
         openNewTab: true,
     },
 
-    // 8) Ocean Band - Xanh Dạ Quang (Titan Đen)
     {
         type: "product",
         id: "ocean-band-mgcl4",
@@ -170,7 +164,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
         openNewTab: true,
     },
 
-    // 9) Nike Sport Loop - Xám Nhạt 40mm
     {
         type: "product",
         id: "nike-sport-loop-lightgray-mgcq4",
@@ -182,7 +175,6 @@ export const DEFAULT_ITEMS: ShelfItem[] = [
         openNewTab: true,
     },
 ];
-
 
 export default function HealthShelf({
     title = "Sức khoẻ.",
@@ -223,15 +215,11 @@ export default function HealthShelf({
         };
     }, [measure]);
 
-    /**
-     * ✅ Apple-like: paddlenav scroll theo "viewport page"
-     * (không bị lệch do hero 400px vs product 320px)
-     */
     const scrollByPage = useCallback((dir: -1 | 1) => {
         const el = scrollerRef.current;
         if (!el) return;
 
-        const gutter = window.innerWidth >= 640 ? 24 : 16; // px-4 / sm:px-6
+        const gutter = window.innerWidth >= 640 ? 24 : 16;
         const step = Math.max(280, el.clientWidth - gutter * 2);
 
         el.scrollBy({ left: dir * step, behavior: "smooth" });
@@ -246,7 +234,6 @@ export default function HealthShelf({
             )}
         >
             <section className="py-10">
-                {/* Header container 1190 */}
                 <div className="mx-auto w-full max-w-[1190px] px-4 sm:px-6 lg:px-0">
                     <div className="mb-6">
                         <h2 className="text-[32px] font-semibold leading-[1.12] tracking-[-0.02em] text-[#1d1d1f]">
@@ -263,17 +250,11 @@ export default function HealthShelf({
                         aria-label={title}
                         className={cn(
                             "w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]",
-
-                            // ✅ quan trọng: hover lift không bị cắt
                             "overflow-x-auto overflow-y-visible",
-
                             "scroll-smooth [-webkit-overflow-scrolling:touch]",
                             "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
                             "[scroll-snap-type:x_mandatory]",
-
-                            // ✅ đệm trên/dưới để card lift + shadow không đụng mép
                             "pt-8 pb-6",
-
                             "scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-[max(0px,calc((100vw-1190px)/2))]",
                             "scroll-pr-4 sm:scroll-pr-6 lg:scroll-pr-[max(0px,calc((100vw-1190px)/2))]"
                         )}
@@ -287,6 +268,10 @@ export default function HealthShelf({
                             )}
                         >
                             {data.map((item, idx) => {
+                                const unoptimized = shouldUnoptimize(
+                                    item.type === "hero" ? item.imageSrc : item.imageSrc
+                                );
+
                                 if (item.type === "hero") {
                                     return (
                                         <div
@@ -306,7 +291,6 @@ export default function HealthShelf({
                                                     "max-[520px]:w-[74vw] max-[520px]:h-[112vw] max-[520px]:max-h-[520px]"
                                                 )}
                                             >
-
                                                 <div className="relative z-[2] p-7">
                                                     <div className="text-[28px] font-semibold leading-[1.12] tracking-[-0.02em] text-[#1d1d1f]">
                                                         {item.title}
@@ -321,6 +305,8 @@ export default function HealthShelf({
                                                         sizes="(max-width: 520px) 86vw, 400px"
                                                         className="object-cover"
                                                         priority={idx === 0}
+                                                        unoptimized={unoptimized}
+                                                        referrerPolicy="no-referrer"
                                                     />
                                                     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1000px_520px_at_20%_10%,rgba(0,0,0,0.05),transparent_60%)]" />
                                                 </div>
@@ -337,6 +323,8 @@ export default function HealthShelf({
                                     >
                                         <Link
                                             href={item.href}
+                                            target={item.openNewTab ? "_blank" : undefined}
+                                            rel={item.openNewTab ? "noopener noreferrer" : undefined}
                                             className={cn(
                                                 "block rounded-[18px] bg-white",
                                                 "shadow-[0_18px_40px_rgba(0,0,0,0.10)]",
@@ -346,7 +334,6 @@ export default function HealthShelf({
                                             )}
                                         >
                                             <div className="h-full p-7 flex flex-col">
-                                                {/* Media stage */}
                                                 <div className="relative h-[290px]">
                                                     <div className="absolute inset-x-0 top-0 bottom-[52px] flex items-center justify-center pt-6">
                                                         {item.imageSrc ? (
@@ -357,6 +344,8 @@ export default function HealthShelf({
                                                                     fill
                                                                     sizes="220px"
                                                                     className="object-contain"
+                                                                    unoptimized={unoptimized}
+                                                                    referrerPolicy="no-referrer"
                                                                 />
                                                             </div>
                                                         ) : (
@@ -364,7 +353,6 @@ export default function HealthShelf({
                                                         )}
                                                     </div>
 
-                                                    {/* Swatch lane */}
                                                     {item.swatches?.length ? (
                                                         <div className="absolute inset-x-0 bottom-0 h-[52px] flex items-center justify-center">
                                                             <ul
@@ -399,7 +387,6 @@ export default function HealthShelf({
                                                     )}
                                                 </div>
 
-                                                {/* Violator */}
                                                 {item.violator ? (
                                                     <div className="mt-3">
                                                         <span className="inline-flex rounded-full bg-black/5 px-2 py-1 text-[12px] font-medium text-[#bf4800]">
@@ -410,7 +397,6 @@ export default function HealthShelf({
                                                     <div className="mt-3 h-[24px]" />
                                                 )}
 
-                                                {/* Title + price */}
                                                 <div className="mt-3">
                                                     <div className="text-[17px] font-semibold leading-[1.2] text-[#1d1d1f] line-clamp-2 min-h-[42px]">
                                                         {item.title}
@@ -430,7 +416,6 @@ export default function HealthShelf({
                                 );
                             })}
 
-                            {/* End spacer */}
                             <div
                                 aria-hidden="true"
                                 className={cn(
@@ -442,7 +427,6 @@ export default function HealthShelf({
                         </div>
                     </div>
 
-                    {/* Paddlenav */}
                     <button
                         type="button"
                         aria-label={`Trước - ${title}`}
